@@ -58,16 +58,11 @@
     font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--amber); padding:8px 0;
   }
 
-  select, textarea, input[type="file"]{
+  select, textarea{
     width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
     padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-radius:2px;
   }
   textarea{ font-family:'Inter',sans-serif; font-size:13px; resize:vertical; min-height:70px; }
-
-  .preview-thumb{
-    max-width:100%; height:120px; object-fit:cover; border:1px solid var(--line);
-    margin-top:6px; display:none; border-radius:2px;
-  }
 
   .submit-btn{
     width:100%; padding:12px 0; background:var(--wet); color:#0a1a0e; border:none;
@@ -106,15 +101,8 @@
         </select>
       </div>
 
-      <!-- Optional File / PNG Photo Upload -->
       <div class="field-group">
-        <label>3. Upload Photo / PNG (Optional)</label>
-        <input type="file" id="photoInput" accept="image/png, image/jpeg, image/*">
-        <img id="photoPreview" class="preview-thumb" alt="Preview">
-      </div>
-
-      <div class="field-group">
-        <label>4. Additional Notes (Optional)</label>
+        <label>3. Additional Notes (Optional)</label>
         <textarea id="noteInput" placeholder="Add details..."></textarea>
       </div>
 
@@ -149,12 +137,9 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
 let currentMarker = null;
 let selectedLat = null;
 let selectedLng = null;
-let base64Photo = null;
 
 const submitBtn = document.getElementById('submitBtn');
 const coordsText = document.getElementById('coordsText');
-const photoInput = document.getElementById('photoInput');
-const photoPreview = document.getElementById('photoPreview');
 
 map.on('click', (e) => {
   selectedLat = e.latlng.lat;
@@ -163,23 +148,6 @@ map.on('click', (e) => {
   currentMarker = L.marker([selectedLat, selectedLng]).addTo(map);
   coordsText.textContent = `📍 ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
   submitBtn.disabled = false;
-});
-
-// Optional Photo Conversion to Base64
-photoInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      base64Photo = event.target.result;
-      photoPreview.src = base64Photo;
-      photoPreview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-  } else {
-    base64Photo = null;
-    photoPreview.style.display = 'none';
-  }
 });
 
 document.getElementById('reportForm').addEventListener('submit', async (e) => {
@@ -195,7 +163,6 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
       lng: selectedLng,
       sev: document.getElementById('severityInput').value,
       note: document.getElementById('noteInput').value.trim(),
-      initialImage: base64Photo || null,
       status: 'active',
       ts: Date.now()
     });
@@ -204,8 +171,6 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
     document.getElementById('reportForm').reset();
     if (currentMarker) map.removeLayer(currentMarker);
     coordsText.textContent = "Click anywhere on the map to pin location...";
-    base64Photo = null;
-    photoPreview.style.display = 'none';
     submitBtn.textContent = "Log Report";
   } catch (err) {
     console.error("Error logging report:", err);
