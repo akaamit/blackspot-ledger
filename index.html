@@ -26,6 +26,7 @@
     --paper-dim:#a9a89c;
     --line:#3a4038;
     --wa-green:#25D366;
+    --resolved:#5a6558;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
@@ -86,6 +87,7 @@
   .dot.wet{background:var(--wet);}
   .dot.dry{background:var(--dry);}
   .dot.hazard{background:var(--hazard);}
+  .dot.resolved{background:var(--resolved);}
 
   .search-row{ display:flex; gap:8px; margin-bottom:10px; position:relative; }
   .search-row input{
@@ -176,16 +178,29 @@
   }
   .ledger-row.tier-1 .rank{color:var(--hazard);}
   .ledger-row.tier-2 .rank{color:var(--amber);}
+  .ledger-row.tier-resolved .rank{color:var(--resolved);}
   .ledger-body{flex:1; min-width:0;}
   .ledger-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
   .ledger-title{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;}
   .ledger-score{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap;}
-  .ledger-meta{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--paper-dim); margin-top:4px;}
+  .ledger-actions{display:flex; align-items:center; gap:8px; margin-top:6px;}
   .bar-track{height:5px; background:var(--ink); border-radius:3px; margin-top:7px; overflow:hidden;}
   .bar-fill{height:100%; border-radius:3px;}
   .tier-1 .bar-fill{background:var(--hazard);}
   .tier-2 .bar-fill{background:var(--amber);}
   .tier-3 .bar-fill{background:var(--wet);}
+  .tier-resolved .bar-fill{background:var(--resolved);}
+
+  .badge-resolved{
+    background:var(--resolved); color:var(--paper); font-family:'IBM Plex Mono',monospace;
+    font-size:10px; padding:2px 6px; border-radius:2px; font-weight:600; text-transform:uppercase;
+  }
+  .resolve-action-btn{
+    background:none; border:1px solid var(--line); color:var(--paper-dim);
+    font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px;
+    border-radius:2px; cursor:pointer; transition:all 0.2s; margin-top:6px;
+  }
+  .resolve-action-btn:hover{border-color:var(--paper); color:var(--paper);}
 
   .algo-note{
     margin-top:26px; padding:14px 16px; border:1px dashed var(--line); border-radius:3px;
@@ -238,6 +253,7 @@
     <div class="pill"><span class="dot wet"></span> LOW &nbsp;·&nbsp; occasional litter</div>
     <div class="pill"><span class="dot dry"></span> MED &nbsp;·&nbsp; recurring dump</div>
     <div class="pill"><span class="dot hazard"></span> HIGH &nbsp;·&nbsp; open/burning waste</div>
+    <div class="pill"><span class="dot resolved"></span> CLEARED &nbsp;·&nbsp; resolved spot</div>
   </div>
 
   <div class="search-row">
@@ -283,7 +299,7 @@
   </div>
 
   <div class="algo-note">
-    <b>How ranking works —</b> Reports within 40m are merged into clusters. Each cluster receives a <b>Black Spot Score</b> = (report count × 10) + (average severity × 8) + recency bonus (fades over 30 days). High scores trigger priority alert flags.
+    <b>How ranking works —</b> Reports within 40m are merged into clusters. Each cluster receives a <b>Black Spot Score</b> = (report count × 10) + (average severity × 8) + recency bonus (fades over 30 days). Resolved spots display as cleared until new reports are logged.
   </div>
 
 </div>
@@ -303,7 +319,7 @@ const firebaseConfig = {
 
 const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
 
-let db = null, collection, addDoc, onSnapshot;
+let db = null, collection, addDoc, onSnapshot, doc, updateDoc;
 let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
 
 async function initFirebase(){
@@ -315,12 +331,12 @@ async function initFirebase(){
   try {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
     const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
-    collection = fs.collection; addDoc = fs.addDoc; onSnapshot = fs.onSnapshot;
+    collection = fs.collection; addDoc = fs.addDoc; onSnapshot = fs.onSnapshot; doc = fs.doc; updateDoc = fs.updateDoc;
     const app = initializeApp(firebaseConfig);
     db = fs.getFirestore(app);
     const reportsCol = collection(db, "reports");
     onSnapshot(reportsCol, (snapshot) => {
-      reports = snapshot.docs.map(d => d.data());
+      reports = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
       localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
       render();
     });
@@ -331,6 +347,7 @@ async function initFirebase(){
 }
 
 async function persistReport(r){
+  r.status = 'active';
   reports.push(r);
   localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
   render();
@@ -339,6 +356,29 @@ async function persistReport(r){
     await addDoc(reportsCol, r);
   }
 }
+
+// Global function to toggle spot resolution
+window.toggleClusterStatus = async function(clusterIndex){
+  const targetCluster = window.currentClusters && window.currentClusters[clusterIndex];
+  if(!targetCluster) return;
+
+  const newStatus = targetCluster.isResolved ? 'active' : 'resolved';
+
+  for(const p of targetCluster.points){
+    p.status = newStatus;
+    if(isConfigured && db && p.docId){
+      try {
+        const docRef = doc(db, "reports", p.docId);
+        await updateDoc(docRef, { status: newStatus });
+      } catch(err) {
+        console.error("Error updating resolution status in Firebase:", err);
+      }
+    }
+  }
+
+  localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
+  render();
+};
 
 // Map setup & Tile Layers
 const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru default
@@ -500,17 +540,25 @@ function clusterReports(points){
 }
 
 function scoreCluster(c){
-  const count = c.points.length;
-  const avgSev = c.points.reduce((s,p)=>s+p.sev,0) / count;
+  const activePoints = c.points.filter(p => p.status !== 'resolved');
+  const isResolved = activePoints.length === 0;
+
+  if(isResolved){
+    return { score: 0, count: c.points.length, activeCount: 0, avgSev: 0, daysAgo: 0, isResolved: true };
+  }
+
+  const count = activePoints.length;
+  const avgSev = activePoints.reduce((s,p)=>s+p.sev,0) / count;
   const now = Date.now();
-  const mostRecent = Math.max(...c.points.map(p=>p.ts));
+  const mostRecent = Math.max(...activePoints.map(p=>p.ts));
   const daysAgo = (now - mostRecent) / (1000*60*60*24);
   const recencyBonus = Math.max(0, 20 * (1 - daysAgo/30));
   const score = (count * 10) + (avgSev * 8) + recencyBonus;
-  return { score, count, avgSev, daysAgo };
+  return { score, count: c.points.length, activeCount: count, avgSev, daysAgo, isResolved: false };
 }
 
-function tierOf(score){
+function tierOf(score, isResolved){
+  if(isResolved) return 'resolved';
   if(score >= 45) return 1;
   if(score >= 22) return 2;
   return 3;
@@ -521,19 +569,26 @@ const clusterLayer = L.layerGroup().addTo(map);
 function render(){
   const clusters = clusterReports(reports).map(c=>{
     const s = scoreCluster(c);
-    return {...c, ...s, tier: tierOf(s.score)};
+    return {...c, ...s, tier: tierOf(s.score, s.isResolved)};
   }).sort((a,b)=>b.score-a.score);
 
+  window.currentClusters = clusters;
+
   clusterLayer.clearLayers();
-  const tierColor = {1:'#c1512f', 2:'#c99a3e', 3:'#4e7d5c'};
-  const maxScore = clusters.length ? clusters[0].score : 1;
-  clusters.forEach(c=>{
-    const radius = 8 + 12 * (c.score / maxScore);
+  const tierColor = {1:'#c1512f', 2:'#c99a3e', 3:'#4e7d5c', 'resolved':'#5a6558'};
+  const maxScore = clusters.filter(c => !c.isResolved).length ? Math.max(...clusters.filter(c => !c.isResolved).map(c=>c.score)) : 1;
+
+  clusters.forEach((c, i)=>{
+    const radius = c.isResolved ? 8 : (8 + 12 * (c.score / maxScore));
+    const statusText = c.isResolved ? 'Mark as Active' : 'Mark as Resolved';
+    const statusHeader = c.isResolved ? '<b style="color:#5a6558;">[CLEARED SPOT]</b><br>' : `<b>${c.activeCount} active / ${c.count} total report${c.count>1?'s':''}</b><br>`;
+    const scoreText = c.isResolved ? '' : `avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}<br>`;
+
     L.circleMarker(c.centroid, {
       radius, color: tierColor[c.tier], fillColor: tierColor[c.tier],
       fillOpacity:0.45, weight:2
     }).bindPopup(
-      `<b>${c.count} report${c.count>1?'s':''}</b><br>avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}`
+      `${statusHeader}${scoreText}<button class="resolve-action-btn" onclick="window.toggleClusterStatus(${i})">${statusText}</button>`
     ).addTo(clusterLayer);
   });
 
@@ -543,17 +598,23 @@ function render(){
     return;
   }
   ledger.innerHTML = clusters.map((c,i)=>{
-    const pct = Math.min(100, (c.score/maxScore)*100);
+    const pct = c.isResolved ? 0 : Math.min(100, (c.score/maxScore)*100);
     const recentNote = c.daysAgo < 1 ? 'today' : `${Math.floor(c.daysAgo)}d ago`;
+    const scoreLabel = c.isResolved ? '<span class="badge-resolved">CLEARED</span>' : `score ${c.score.toFixed(0)}`;
+    const actionText = c.isResolved ? 'Re-open Spot' : 'Mark Resolved';
+
     return `
       <div class="ledger-row tier-${c.tier}">
         <div class="rank">${i+1}</div>
         <div class="ledger-body">
           <div class="ledger-top">
             <div class="ledger-title">${c.centroid.lat.toFixed(4)}, ${c.centroid.lng.toFixed(4)}</div>
-            <div class="ledger-score">score ${c.score.toFixed(0)}</div>
+            <div class="ledger-score">${scoreLabel}</div>
           </div>
-          <div class="ledger-meta">${c.count} report${c.count>1?'s':''} · avg sev ${c.avgSev.toFixed(1)} · last seen ${recentNote}</div>
+          <div class="ledger-meta">${c.count} report${c.count>1?'s':''} · ${c.isResolved ? 'spot cleared' : `avg sev ${c.avgSev.toFixed(1)} · last seen ${recentNote}`}</div>
+          <div class="ledger-actions">
+            <button class="resolve-action-btn" onclick="window.toggleClusterStatus(${i})">${actionText}</button>
+          </div>
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
         </div>
       </div>`;
@@ -569,7 +630,8 @@ document.getElementById('reportForm').addEventListener('submit', async function(
     lng: pendingLatLng.lng,
     sev: selectedSev,
     note: document.getElementById('noteInput').value.trim(),
-    ts: Date.now()
+    ts: Date.now(),
+    status: 'active'
   };
   await persistReport(report);
 
