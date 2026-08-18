@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrashTagger Authority Portal — BBMP Sanitation</title>
 
+<!-- Leaflet Satellite Map CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -24,39 +27,58 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
-  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 60px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px;}
 
   .masthead{
-    display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:20px;
-    flex-wrap:wrap; gap:8px;
+    display:flex; align-items:center; justify-space-between;
+    border-bottom:3px solid var(--paper); padding-bottom:12px; margin-bottom:20px;
+    flex-wrap:wrap; gap:12px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:26px;
+    font-family:'Archivo Black',sans-serif; font-size:24px;
     margin:0; text-transform:uppercase; display:flex; align-items:center; gap:10px;
   }
   .masthead h1 span.badge{
-    background:var(--hazard); color:#fff; font-size:12px; font-family:'IBM Plex Mono',monospace;
+    background:var(--hazard); color:#fff; font-size:11px; font-family:'IBM Plex Mono',monospace;
     padding:3px 8px; border-radius:2px; letter-spacing:1px;
   }
   .masthead .meta{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
   }
 
+  /* Embedded Satellite Map */
+  #map{
+    width:100%; height:380px; border:1px solid var(--line); border-radius:4px;
+    margin-bottom:24px;
+  }
+
   .panel-title{
     font-family:'Oswald',sans-serif; font-size:16px; letter-spacing:1.5px;
     text-transform:uppercase; margin-bottom:14px; border-left:3px solid var(--wet); padding-left:8px;
+    display:flex; justify-content:space-between; align-items:center;
   }
 
   .report-list{display:flex; flex-direction:column; gap:14px;}
   .report-card{
     background:var(--card); border:1px solid var(--line); border-radius:4px; padding:16px;
-    display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
   }
   .report-info{flex:1; min-width:280px;}
-  .report-coords{
-    font-family:'Oswald',sans-serif; font-size:18px; color:var(--paper); letter-spacing:0.5px;
+
+  /* Clickable Map Coordinates Link */
+  .report-coords-link{
+    font-family:'Oswald',sans-serif; font-size:18px; color:var(--amber);
+    letter-spacing:0.5px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+    transition:color 0.2s;
   }
+  .report-coords-link:hover{
+    color:var(--paper); text-decoration:underline;
+  }
+  .report-coords-link .ext-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; background:var(--card-2);
+    border:1px solid var(--line); color:var(--paper-dim); padding:2px 6px; border-radius:2px;
+  }
+
   .report-meta{
     font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-top:6px; line-height:1.6;
   }
@@ -67,7 +89,7 @@
 
   .resolve-btn{
     background:var(--wet); color:#0a1a0e; border:none; border-radius:3px;
-    padding:10px 16px; font-family:'Oswald',sans-serif; font-weight:600;
+    padding:10px 18px; font-family:'Oswald',sans-serif; font-weight:600;
     font-size:13px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
   }
   .resolve-btn:hover{background:#5c9270;}
@@ -75,7 +97,7 @@
   /* Resolution Modal */
   .modal-overlay{
     display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
-    background:rgba(10,13,11,0.9); z-index:9999; justify-content:center; align-items:center; padding:20px;
+    background:rgba(10,13,11,0.92); z-index:9999; justify-content:center; align-items:center; padding:20px;
   }
   .modal-box{
     background:var(--card); border:1px solid var(--line); border-radius:4px;
@@ -116,34 +138,45 @@
     font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--paper-dim);
     text-align:center; padding:40px 0; border:1px dashed var(--line); border-radius:4px;
   }
+
+  .leaflet-popup-content-wrapper{background:var(--card); color:var(--paper); border-radius:3px;}
+  .leaflet-popup-tip{background:var(--card);}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="masthead">
-    <h1>TrashTagger <span class="badge">AUTHORITY PORTAL</span></h1>
-    <div class="meta">SANITATION ACTION & RESOLUTION CONTROL</div>
+    <div>
+      <h1>TrashTagger <span class="badge">AUTHORITY PORTAL</span></h1>
+      <div class="meta">BBMP SANITATION ACTION & DISPATCH CONTROL</div>
+    </div>
   </div>
 
-  <div class="panel-title">Active Reported Spots Requiring Cleanup</div>
+  <!-- Interactive Satellite Overview Map -->
+  <div id="map"></div>
+
+  <div class="panel-title">
+    <span>Active Black Spots Requiring Action</span>
+    <span id="activeCountBadge" style="font-family:'IBM Plex Mono'; font-size:12px; color:var(--paper-dim);">0 Pending</span>
+  </div>
 
   <div class="report-list" id="reportList">
-    <div class="empty-state">Loading active reports…</div>
+    <div class="empty-state">Loading active spots…</div>
   </div>
 
 </div>
 
-<!-- Resolve Action Modal -->
+<!-- Resolve Action Modal (Before & After Image Uploads) -->
 <div class="modal-overlay" id="resolveModal">
   <div class="modal-box">
     <button class="modal-close" id="closeModal">✕</button>
-    <div class="modal-heading">Clear & Attach Resolution Proof</div>
+    <div class="modal-heading">Attach Cleanup Proof & Resolve</div>
     <form id="resolveForm">
       
       <!-- Upload 1: Before Image -->
       <div class="file-group">
-        <label>1. Before Cleanup Photo (Initial Condition)</label>
+        <label>1. Before Cleanup Photo (Initial Spot)</label>
         <input type="file" id="beforeImgInput" accept="image/*" required>
         <img id="beforePreview" class="preview-thumb" alt="Before Preview">
       </div>
@@ -160,6 +193,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -176,6 +210,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Leaflet Satellite Map Setup
+const map = L.map('map').setView([12.9716, 77.5946], 13);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri &mdash; Source: Esri',
+  maxZoom: 18
+}).addTo(map);
+
+const markersLayer = L.layerGroup().addTo(map);
+
 let activeDocId = null;
 let beforeBase64 = null;
 let afterBase64 = null;
@@ -190,7 +233,7 @@ document.getElementById('closeModal').addEventListener('click', () => {
   resolveModal.style.display = 'none';
 });
 
-// Helper: Convert file to compressed Base64 Data URL
+// Convert uploaded file to Base64
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -260,12 +303,12 @@ document.getElementById('resolveForm').addEventListener('submit', async (e) => {
       status: 'resolved',
       beforeImage: beforeBase64,
       afterImage: afterBase64,
-      proofImage: afterBase64, // Fallback for single-image views
+      proofImage: afterBase64,
       resolvedAt: Date.now()
     });
 
     resolveModal.style.display = 'none';
-    alert("Spot successfully resolved and proof updated!");
+    alert("Spot successfully resolved!");
   } catch (err) {
     console.error("Error resolving report:", err);
     alert("Failed to update status. Please try again.");
@@ -281,24 +324,58 @@ onSnapshot(collection(db, "reports"), (snapshot) => {
     .map(d => ({ docId: d.id, ...d.data() }))
     .filter(r => r.status !== 'resolved');
 
+  document.getElementById('activeCountBadge').textContent = `${reports.length} Active`;
+
+  markersLayer.clearLayers();
   const reportList = document.getElementById('reportList');
+
   if (reports.length === 0) {
     reportList.innerHTML = `<div class="empty-state">🎉 All reported black spots are currently cleared!</div>`;
     return;
   }
 
-  reportList.innerHTML = reports.map(r => `
-    <div class="report-card">
-      <div class="report-info">
-        <div class="report-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
-        <div class="report-meta">
-          SEVERITY: Level ${r.sev} &nbsp;·&nbsp; LOGGED: ${new Date(r.ts).toLocaleString('en-IN')}
+  const bounds = [];
+
+  reportList.innerHTML = reports.map(r => {
+    bounds.push([r.lat, r.lng]);
+
+    // Add marker to Satellite map
+    const marker = L.circleMarker([r.lat, r.lng], {
+      radius: 9,
+      color: '#c1512f',
+      fillColor: '#c1512f',
+      fillOpacity: 0.8,
+      weight: 2
+    }).bindPopup(`
+      <b style="font-family:'Oswald';">SEVERITY LEVEL ${r.sev}</b><br>
+      ${r.note ? r.note : 'No notes'}<br><br>
+      <a href="https://www.google.com/maps?q=${r.lat},${r.lng}&t=k" target="_blank" style="color:#c99a3e; text-decoration:none;">Open Satellite View ↗</a>
+    `);
+    markersLayer.addLayer(marker);
+
+    // Clickable Google Maps Satellite URL
+    const gmapsSatelliteUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}&t=k`;
+
+    return `
+      <div class="report-card">
+        <div class="report-info">
+          <a href="${gmapsSatelliteUrl}" target="_blank" class="report-coords-link" title="Open in Google Maps Satellite View">
+            📍 ${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}
+            <span class="ext-tag">Open Satellite Map ↗</span>
+          </a>
+          <div class="report-meta">
+            SEVERITY: Level ${r.sev} &nbsp;·&nbsp; LOGGED: ${new Date(r.ts).toLocaleString('en-IN')}
+          </div>
+          ${r.note ? `<div class="report-note">Note: "${r.note}"</div>` : ''}
         </div>
-        ${r.note ? `<div class="report-note">Note: "${r.note}"</div>` : ''}
+        <button class="resolve-btn" onclick="openResolveModal('${r.docId}')">Resolve Spot</button>
       </div>
-      <button class="resolve-btn" onclick="openResolveModal('${r.docId}')">Resolve Spot</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+  }
 });
 </script>
 </body>
