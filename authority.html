@@ -30,7 +30,7 @@
   .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px;}
 
   .masthead{
-    display:flex; align-items:center; justify-space-between;
+    display:flex; align-items:center; justify-content:space-between;
     border-bottom:3px solid var(--paper); padding-bottom:12px; margin-bottom:20px;
     flex-wrap:wrap; gap:12px;
   }
@@ -80,8 +80,25 @@
   }
 
   .report-meta{
-    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-top:6px; line-height:1.6;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-top:6px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   }
+
+  /* Severity Badge Styles */
+  .sev-badge{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
+    padding:2px 8px; border-radius:3px; letter-spacing:0.5px; display:inline-block;
+  }
+  .sev-low{
+    background:#1b382b; color:#52b788; border:1px solid #2d6a4f;
+  }
+  .sev-medium{
+    background:#3d3210; color:#f3c053; border:1px solid #7a631c;
+  }
+  .sev-high{
+    background:#4a1c1c; color:#ff6b6b; border:1px solid #9e2a2b;
+  }
+
   .report-note{
     background:var(--ink); border:1px solid var(--line); border-radius:3px; padding:8px 10px;
     font-size:12.5px; margin-top:8px; color:var(--paper);
@@ -209,6 +226,18 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// Helper function to categorize severity into LOW (Green), MEDIUM (Yellow), HIGH (Red)
+function getSevDetails(sev) {
+  const s = String(sev).toLowerCase();
+  if (s === '1' || s === 'low') {
+    return { label: 'LOW', color: '#52b788', cssClass: 'sev-low' };
+  } else if (s === '2' || s === 'medium') {
+    return { label: 'MEDIUM', color: '#f3c053', cssClass: 'sev-medium' };
+  } else {
+    return { label: 'HIGH', color: '#ff6b6b', cssClass: 'sev-high' };
+  }
+}
 
 // Leaflet Satellite Map Setup
 const map = L.map('map').setView([12.9716, 77.5946], 13);
@@ -338,16 +367,17 @@ onSnapshot(collection(db, "reports"), (snapshot) => {
 
   reportList.innerHTML = reports.map(r => {
     bounds.push([r.lat, r.lng]);
+    const sev = getSevDetails(r.sev);
 
-    // Add marker to Satellite map
+    // Add marker to Satellite map with dynamic severity color
     const marker = L.circleMarker([r.lat, r.lng], {
       radius: 9,
-      color: '#c1512f',
-      fillColor: '#c1512f',
-      fillOpacity: 0.8,
+      color: sev.color,
+      fillColor: sev.color,
+      fillOpacity: 0.85,
       weight: 2
     }).bindPopup(`
-      <b style="font-family:'Oswald';">SEVERITY LEVEL ${r.sev}</b><br>
+      <b style="font-family:'Oswald'; color:${sev.color};">SEVERITY: ${sev.label}</b><br>
       ${r.note ? r.note : 'No notes'}<br><br>
       <a href="https://www.google.com/maps?q=${r.lat},${r.lng}&t=k" target="_blank" style="color:#c99a3e; text-decoration:none;">Open Satellite View ↗</a>
     `);
@@ -364,7 +394,9 @@ onSnapshot(collection(db, "reports"), (snapshot) => {
             <span class="ext-tag">Open Satellite Map ↗</span>
           </a>
           <div class="report-meta">
-            SEVERITY: Level ${r.sev} &nbsp;·&nbsp; LOGGED: ${new Date(r.ts).toLocaleString('en-IN')}
+            <span>SEVERITY:</span>
+            <span class="sev-badge ${sev.cssClass}">${sev.label}</span>
+            <span>· LOGGED: ${new Date(r.ts).toLocaleString('en-IN')}</span>
           </div>
           ${r.note ? `<div class="report-note">Note: "${r.note}"</div>` : ''}
         </div>
