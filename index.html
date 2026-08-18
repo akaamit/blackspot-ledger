@@ -3,12 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrashTagger — Community Waste Tracker</title>
-
-<!-- Open Graph Meta Tags for WhatsApp Link Preview -->
-<meta property="og:title" content="TrashTagger — Community Waste Tracker">
-<meta property="og:description" content="Tag and track illegal waste dump sites in real time. Help map black spots and keep our streets clean.">
-<meta property="og:type" content="website">
+<title>TrashTagger — BBMP Civic Authority Portal</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,272 +20,200 @@
     --paper:#ece7d9;
     --paper-dim:#a9a89c;
     --line:#3a4038;
-    --wa-green:#25D366;
+    --bbmp-blue:#2d72d9;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
   .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px;}
 
+  /* Auth Gate Screen */
+  .auth-overlay{
+    position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:var(--ink); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .auth-box{
+    background:var(--card); border:1px solid var(--line); border-top:4px solid var(--bbmp-blue);
+    border-radius:4px; padding:28px 24px; max-width:400px; width:100%; text-align:center;
+  }
+  .auth-box h2{font-family:'Archivo Black',sans-serif; text-transform:uppercase; margin:0 0 6px; font-size:20px;}
+  .auth-box p{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-bottom:20px;}
+  .auth-box input{
+    width:100%; padding:10px 12px; background:var(--ink); border:1px solid var(--line);
+    color:var(--paper); font-family:'IBM Plex Mono',monospace; border-radius:2px; margin-bottom:14px; text-align:center;
+  }
+  .auth-box button{
+    width:100%; padding:11px; background:var(--bbmp-blue); color:#fff; border:none;
+    border-radius:2px; font-family:'Oswald',sans-serif; font-size:14px; font-weight:600;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+  }
+  .auth-box button:hover{background:#3b82ed;}
+  .auth-err{color:var(--hazard); font-family:'IBM Plex Mono',monospace; font-size:11px; margin-top:10px; display:none;}
+
+  /* Main Portal Layout */
+  #mainApp{display:none;}
   .masthead{
     display:flex; align-items:baseline; justify-content:space-between;
     border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:14px;
     flex-wrap:wrap; gap:8px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:clamp(24px,5vw,36px);
+    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,5vw,32px);
     letter-spacing:0.5px; margin:0; text-transform:uppercase;
   }
-  .masthead h1 span{color:var(--hazard);}
+  .masthead h1 span{color:var(--bbmp-blue);}
   .masthead .meta{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
     text-align:right; line-height:1.5;
   }
 
-  .intro-card{
-    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--wa-green);
-    border-radius:3px; padding:14px 16px; margin-bottom:18px;
-    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+  .nav-tabs{display:flex; gap:10px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:10px;}
+  .tab-btn{
+    background:var(--card); border:1px solid var(--line); color:var(--paper-dim);
+    padding:8px 16px; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:1px;
+    text-transform:uppercase; cursor:pointer; border-radius:2px;
   }
-  .intro-text{
-    flex:1; min-width:260px; font-family:'Inter',sans-serif; font-size:13px; line-height:1.55; color:var(--paper);
-  }
-  .intro-text b{color:#fff;}
-  .intro-sub{
-    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-top:4px;
-  }
+  .tab-btn.active{background:var(--bbmp-blue); color:#fff; border-color:var(--bbmp-blue);}
 
-  .share-btn{
-    background:var(--wa-green); color:#0a2010; border:none; border-radius:3px;
-    padding:10px 16px; font-family:'Oswald',sans-serif; font-weight:600;
-    font-size:13px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
-    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
-    box-shadow: 0 2px 6px rgba(37,211,102,0.2);
-    transition: background 0.2s;
-  }
-  .share-btn:hover{background:#20bd5a;}
-
-  .setup-banner{
-    display:none; background:#3a2a1c; border:1px solid var(--amber); border-radius:3px;
-    padding:11px 14px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;
-    color:var(--amber); margin-bottom:16px; line-height:1.6;
-  }
-  .setup-banner b{color:var(--paper);}
-
-  .status-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
-  .pill{
-    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:5px 10px;
-    border:1px solid var(--line); border-radius:2px; color:var(--paper-dim);
-    display:flex; align-items:center; gap:6px;
-  }
-  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-  .dot.wet{background:var(--wet);}
-  .dot.dry{background:var(--dry);}
-  .dot.hazard{background:var(--hazard);}
-
-  .search-row{ display:flex; gap:8px; margin-bottom:10px; position:relative; }
-  .search-row input{
-    flex:1; background:var(--card); border:1px solid var(--line); color:var(--paper);
-    padding:10px 12px; font-family:'Inter',sans-serif; font-size:13px; border-radius:2px;
-  }
-  .search-row button{
-    background:var(--dry); color:#0e1519; border:none; border-radius:2px;
-    padding:0 16px; font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:1px;
-    text-transform:uppercase; font-size:12px; cursor:pointer;
-  }
-  .search-row button:hover{background:#5a90ab;}
-  .search-results{
-    position:absolute; top:44px; left:0; right:0; background:var(--card-2);
-    border:1px solid var(--line); border-radius:3px; z-index:1000; max-height:220px; overflow-y:auto;
-    display:none;
-  }
-  .search-results div{
-    padding:9px 12px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;
-    border-bottom:1px solid var(--line); cursor:pointer;
-  }
-  .search-results div:last-child{border-bottom:none;}
-  .search-results div:hover{background:var(--ink);}
-
-  #map{
-    width:100%; height:420px; border:1px solid var(--line); border-radius:3px;
-  }
-  .map-note{
-    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
-    margin:8px 0 26px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;
-  }
-  .map-note button{
-    background:none; border:1px solid var(--line); color:var(--paper);
-    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 9px;
-    border-radius:2px; cursor:pointer;
-  }
-  .map-note button:hover{border-color:var(--paper);}
-
-  .grid{display:grid; grid-template-columns:1fr; gap:26px;}
-  @media(min-width:760px){ .grid{grid-template-columns: 1.1fr 1fr;} }
+  #map{width:100%; height:380px; border:1px solid var(--line); border-radius:3px; margin-bottom:20px;}
 
   .panel-label{
     font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:2px;
     text-transform:uppercase; color:var(--paper); margin:0 0 12px;
-    border-left:3px solid var(--hazard); padding-left:8px;
+    border-left:3px solid var(--bbmp-blue); padding-left:8px;
   }
 
-  form{background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px;}
-  form label{display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--paper-dim); text-transform:uppercase; margin:12px 0 5px;}
-  form label:first-of-type{margin-top:0;}
-  textarea{
+  .grid{display:grid; grid-template-columns:1fr; gap:20px;}
+
+  .cards-list{display:flex; flex-direction:column; gap:14px;}
+  .spot-card{
+    background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px;
+  }
+  .spot-header{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .spot-coords{font-family:'Oswald',sans-serif; font-size:15px; letter-spacing:0.5px; color:var(--paper);}
+  .spot-sev{font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 8px; border-radius:2px;}
+  .sev-1{background:var(--wet); color:#000;}
+  .sev-2{background:var(--amber); color:#000;}
+  .sev-3{background:var(--hazard); color:#fff;}
+
+  .spot-meta{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-bottom:12px; line-height:1.5;}
+  .resolve-action-btn{
+    background:var(--bbmp-blue); color:#fff; border:none; border-radius:2px;
+    padding:8px 14px; font-family:'Oswald',sans-serif; font-size:12px; font-weight:600;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+  }
+  .resolve-action-btn:hover{background:#3b82ed;}
+
+  /* Modal Form for Uploading Proof */
+  .modal{
+    position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85);
+    z-index:10000; display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-content{
+    background:var(--card); border:1px solid var(--line); border-radius:4px; max-width:500px; width:100%;
+    padding:20px; font-family:'Inter',sans-serif;
+  }
+  .modal-title{font-family:'Oswald',sans-serif; font-size:18px; text-transform:uppercase; margin:0 0 14px; color:var(--paper);}
+  .modal label{display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--paper-dim); margin:12px 0 4px;}
+  .modal input[type="file"]{
+    width:100%; background:var(--ink); border:1px solid var(--line); padding:8px;
+    color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; font-size:11px; border-radius:2px;
+  }
+  .modal textarea{
     width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
-    padding:9px 10px; font-family:'Inter',sans-serif; font-size:13px; border-radius:2px;
-    resize:vertical; min-height:54px;
+    padding:8px; font-family:'Inter',sans-serif; font-size:12px; border-radius:2px; min-height:50px;
   }
-  .sev-row{display:flex; gap:8px;}
-  .sev-btn{
-    flex:1; padding:9px 0; text-align:center; border:1px solid var(--line);
-    border-radius:2px; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:12px;
-    background:var(--ink); color:var(--paper-dim);
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:18px;}
+  .modal-btn{
+    padding:8px 16px; border:none; border-radius:2px; font-family:'Oswald',sans-serif;
+    font-size:12px; text-transform:uppercase; cursor:pointer;
   }
-  .sev-btn.active[data-sev="1"]{background:var(--amber); color:var(--ink); border-color:var(--amber);}
-  .sev-btn.active[data-sev="2"]{background:var(--hazard); color:var(--paper); border-color:var(--hazard);}
-  .sev-btn.active[data-sev="3"]{background:#8f2a15; color:var(--paper); border-color:#8f2a15;}
-  .coord-line{
-    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
-    margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
-  }
-  .submit-btn{
-    width:100%; margin-top:16px; padding:11px 0; background:var(--wet); color:#0e130f;
-    border:none; border-radius:2px; font-family:'Oswald',sans-serif; font-weight:600;
-    letter-spacing:1px; text-transform:uppercase; font-size:13px; cursor:pointer;
-  }
-  .submit-btn:disabled{opacity:0.4; cursor:not-allowed;}
-  .submit-btn:hover:not(:disabled){background:#5c9270;}
-  .hint{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--paper-dim); margin-top:8px;}
+  .modal-btn.cancel{background:var(--line); color:var(--paper);}
+  .modal-btn.confirm{background:var(--wet); color:#000; font-weight:600;}
 
-  .ledger{background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px; max-height:460px; overflow-y:auto;}
-  .ledger-empty{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); padding:20px 0; text-align:center;}
-  .ledger-row{
-    display:flex; align-items:flex-start; gap:12px; padding:12px 0;
-    border-bottom:1px solid var(--line);
+  /* Before/After Image Preview Layout */
+  .photo-comparison{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;
   }
-  .ledger-row:last-child{border-bottom:none;}
-  .rank{
-    font-family:'Archivo Black',sans-serif; font-size:20px; color:var(--line);
-    width:30px; flex-shrink:0; text-align:right;
+  .photo-box{
+    background:var(--ink); border:1px solid var(--line); border-radius:2px; padding:6px; text-align:center;
   }
-  .ledger-row.tier-1 .rank{color:var(--hazard);}
-  .ledger-row.tier-2 .rank{color:var(--amber);}
-  .ledger-body{flex:1; min-width:0;}
-  .ledger-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
-  .ledger-title{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;}
-  .ledger-score{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap;}
-  .ledger-meta{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--paper-dim); margin-top:4px;}
-  .bar-track{height:5px; background:var(--ink); border-radius:3px; margin-top:7px; overflow:hidden;}
-  .bar-fill{height:100%; border-radius:3px;}
-  .tier-1 .bar-fill{background:var(--hazard);}
-  .tier-2 .bar-fill{background:var(--amber);}
-  .tier-3 .bar-fill{background:var(--wet);}
+  .photo-box img{width:100%; height:110px; object-fit:cover; border-radius:2px; display:block;}
+  .photo-box label{font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--paper-dim); margin-top:4px; display:block; text-transform:uppercase;}
 
-  .algo-note{
-    margin-top:26px; padding:14px 16px; border:1px dashed var(--line); border-radius:3px;
-    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); line-height:1.7;
-  }
-  .algo-note b{color:var(--paper);}
-
-  ::-webkit-scrollbar{width:7px;}
-  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
-
-  .leaflet-popup-content-wrapper{background:var(--card); color:var(--paper); border-radius:3px;}
-  .leaflet-popup-tip{background:var(--card);}
-  .leaflet-popup-content{font-family:'Inter',sans-serif; font-size:12px;}
+  .empty-msg{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); text-align:center; padding:30px 0;}
 
   .leaflet-control-layers{
-    background: var(--card) !important;
-    color: var(--paper) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: 3px !important;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-  }
-  .leaflet-control-layers-toggle{
-    background-color: var(--card) !important;
+    background: var(--card) !important; color: var(--paper) !important;
+    border: 1px solid var(--line) !important; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
   }
 </style>
 </head>
 <body>
-<div class="wrap">
 
+<!-- Password Protection Screen -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>BBMP Authority Portal</h2>
+    <p>TrashTagger Civic Sanitation Dashboard</p>
+    <input type="password" id="passInput" placeholder="Enter Portal Password">
+    <button id="loginBtn">Access Dashboard</button>
+    <div class="auth-err" id="authErr">Incorrect Password. Please try again.</div>
+  </div>
+</div>
+
+<!-- Main Dashboard App -->
+<div class="wrap" id="mainApp">
   <div class="masthead">
-    <h1>Trash<span>Tagger</span></h1>
-    <div class="meta">CIVIC SANITATION TRACKER<br>COMMUNITY WASTE MAPPING</div>
+    <h1>TrashTagger <span>Authority</span></h1>
+    <div class="meta">BBMP SANITATION DASHBOARD<br>WARD RESOLUTION SYSTEM</div>
   </div>
 
-  <!-- Brief Overview Banner -->
-  <div class="intro-card">
-    <div class="intro-text">
-      <b>TrashTagger</b> is a community tool to map, report, and rank illegal waste dump spots in real-time. Tap the satellite map to log a spot—repeat reports automatically raise priority alert scores for civic action.
-      <div class="intro-sub">Help us build a cleaner neighborhood. Share this link with your local WhatsApp groups!</div>
-    </div>
-    <button class="share-btn" id="shareBtn">Share on WhatsApp</button>
-  </div>
-
-  <div class="setup-banner" id="setupBanner">
-    ⚠ <b>Cloud sync not active.</b> Running in local browser mode. Replace the <code>firebaseConfig</code> values in this file to connect live database sync across all users.
-  </div>
-
-  <div class="status-row">
-    <div class="pill"><span class="dot wet"></span> LOW &nbsp;·&nbsp; occasional litter</div>
-    <div class="pill"><span class="dot dry"></span> MED &nbsp;·&nbsp; recurring dump</div>
-    <div class="pill"><span class="dot hazard"></span> HIGH &nbsp;·&nbsp; open/burning waste</div>
-  </div>
-
-  <div class="search-row">
-    <input type="text" id="searchInput" placeholder="Search a place — e.g. MG Road, Bengaluru">
-    <button id="searchBtn">Search</button>
-    <div class="search-results" id="searchResults"></div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="tabActive">Active Black Spots (<span id="activeCount">0</span>)</button>
+    <button class="tab-btn" id="tabResolved">Resolved Archive (<span id="resolvedCount">0</span>)</button>
   </div>
 
   <div id="map"></div>
-  <div class="map-note">
-    <span id="mapStatus">locating you…</span>
-    <button id="locateBtn">recenter on me</button>
+
+  <div id="activeSection">
+    <p class="panel-label">Pending Action Items</p>
+    <div class="cards-list" id="activeList">
+      <div class="empty-msg">No active reports logged.</div>
+    </div>
   </div>
 
-  <div class="grid">
-    <div>
-      <p class="panel-label">Log a report</p>
-      <form id="reportForm">
-        <label>Selected point</label>
-        <div class="coord-line" id="coordDisplay">tap anywhere on the map above</div>
-
-        <label>Severity</label>
-        <div class="sev-row">
-          <div class="sev-btn" data-sev="1">Low</div>
-          <div class="sev-btn" data-sev="2">Medium</div>
-          <div class="sev-btn" data-sev="3">High</div>
-        </div>
-
-        <label>Note (optional)</label>
-        <textarea id="noteInput" placeholder="e.g. behind the bus stop, plastic + food waste"></textarea>
-
-        <button type="submit" class="submit-btn" id="submitBtn" disabled>Log report</button>
-        <div class="hint" id="hintText">Reports save permanently to the cloud — visible to anyone using this app's link.</div>
-      </form>
+  <div id="resolvedSection" style="display:none;">
+    <p class="panel-label">Completed Sanitation Operations</p>
+    <div class="cards-list" id="resolvedList">
+      <div class="empty-msg">No resolved spots archived yet.</div>
     </div>
+  </div>
+</div>
 
-    <div>
-      <p class="panel-label">Ranked black spots</p>
-      <div class="ledger" id="ledger">
-        <div class="ledger-empty">No reports yet. Log the first one to start the ledger.</div>
+<!-- Resolution Upload Modal -->
+<div class="modal" id="resolveModal">
+  <div class="modal-content">
+    <div class="modal-title">Mark Issue as Resolved</div>
+    <form id="resolveForm">
+      <label>Before Clearance Photo</label>
+      <input type="file" id="beforePhotoInput" accept="image/*" required>
+
+      <label>After Clearance Photo</label>
+      <input type="file" id="afterPhotoInput" accept="image/*" required>
+
+      <label>Resolution Action Note</label>
+      <textarea id="resolutionNoteInput" placeholder="e.g. Cleared 200kg waste via Ward 142 sanitation truck"></textarea>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-btn cancel" id="cancelModalBtn">Cancel</button>
+        <button type="submit" class="modal-btn confirm">Confirm Resolution</button>
       </div>
-    </div>
+    </form>
   </div>
-
-  <div class="algo-note">
-    <b>How ranking works —</b> Reports within 40m are merged into clusters. Each cluster receives a <b>Black Spot Score</b> = (report count × 10) + (average severity × 8) + recency bonus (fades over 30 days). High scores trigger priority alert flags.
-  </div>
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
-/* YOUR LIVE FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyCQiMeEqEny83vT8tFDTyHIIhw-6GSWxa0",
   authDomain: "blackspot-ledger.firebaseapp.com",
@@ -301,287 +224,199 @@ const firebaseConfig = {
   measurementId: "G-MQ0WBXET6E"
 };
 
-const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
-
-let db = null, collection, addDoc, onSnapshot;
+const PASSWORD = "trashtagger@123";
 let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
+let db = null, doc, updateDoc, collection, onSnapshot;
+let selectedReportId = null;
+
+// Auth check
+document.getElementById('loginBtn').addEventListener('click', authenticate);
+document.getElementById('passInput').addEventListener('keydown', e => { if(e.key==='Enter') authenticate(); });
+
+function authenticate(){
+  const input = document.getElementById('passInput').value;
+  if(input === PASSWORD){
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    initMap();
+    initFirebase();
+  } else {
+    document.getElementById('authErr').style.display = 'block';
+  }
+}
 
 async function initFirebase(){
-  if(!isConfigured){
-    document.getElementById('setupBanner').style.display = 'block';
-    render();
-    return;
-  }
   try {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
     const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
-    collection = fs.collection; addDoc = fs.addDoc; onSnapshot = fs.onSnapshot;
+    collection = fs.collection; updateDoc = fs.updateDoc; doc = fs.doc; onSnapshot = fs.onSnapshot;
     const app = initializeApp(firebaseConfig);
     db = fs.getFirestore(app);
-    const reportsCol = collection(db, "reports");
-    onSnapshot(reportsCol, (snapshot) => {
-      reports = snapshot.docs.map(d => d.data());
+    onSnapshot(collection(db, "reports"), (snapshot) => {
+      reports = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
       localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
       render();
     });
   } catch(e) {
-    console.warn("Firebase fallback to local cache", e);
     render();
   }
 }
 
-async function persistReport(r){
-  reports.push(r);
-  localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
-  render();
-  if(isConfigured && db){
-    const reportsCol = collection(db, "reports");
-    await addDoc(reportsCol, r);
-  }
-}
-
-// Map setup & Tile Layers
-const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru default
-
-const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO',
-  maxZoom: 19
-});
-
-const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-  maxZoom: 18
-});
-
-// Initialize map with Satellite layer by default
-const map = L.map('map', { 
-  zoomControl: true,
-  layers: [satelliteLayer] 
-}).setView(DEFAULT_CENTER, 14);
-
-const baseMaps = {
-  "Satellite": satelliteLayer,
-  "Dark Mode": darkLayer
-};
-L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
-
-let userMarker = null;
-const mapStatus = document.getElementById('mapStatus');
-
-function locate(){
-  mapStatus.textContent = 'locating you…';
-  if(!navigator.geolocation){
-    mapStatus.textContent = 'geolocation unavailable';
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const ll = [pos.coords.latitude, pos.coords.longitude];
-    map.setView(ll, 15);
-    if(userMarker) map.removeLayer(userMarker);
-    userMarker = L.circleMarker(ll, {radius:7, color:'#4a7a93', fillColor:'#4a7a93', fillOpacity:0.9, weight:2}).addTo(map);
-    mapStatus.textContent = 'centered on your location';
-  }, ()=>{
-    mapStatus.textContent = 'location access denied';
-  }, {timeout:8000});
-}
-document.getElementById('locateBtn').addEventListener('click', locate);
-locate();
-
-// WhatsApp Sharing
-document.getElementById('shareBtn').addEventListener('click', () => {
-  const text = encodeURIComponent("Log and track civic waste dump spots on TrashTagger:");
-  const url = encodeURIComponent(window.location.href);
-  if (navigator.share) {
-    navigator.share({ title: 'TrashTagger', text: 'Community Waste Tracker', url: window.location.href });
-  } else {
-    window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, '_blank');
-  }
-});
-
-// Location Search via Nominatim API
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const searchResults = document.getElementById('searchResults');
-
-async function runSearch(){
-  const q = searchInput.value.trim();
-  if(!q) return;
-  searchResults.innerHTML = '<div>searching…</div>';
-  searchResults.style.display = 'block';
-  try{
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    const results = await res.json();
-    if(!results.length){
-      searchResults.innerHTML = '<div>no matches found</div>';
-      return;
-    }
-    searchResults.innerHTML = '';
-    results.forEach(r=>{
-      const row = document.createElement('div');
-      row.textContent = r.display_name;
-      row.addEventListener('click', ()=>{
-        map.setView([parseFloat(r.lat), parseFloat(r.lon)], 17);
-        searchResults.style.display = 'none';
-        searchInput.value = r.display_name;
-      });
-      searchResults.appendChild(row);
-    });
-  }catch(e){
-    searchResults.innerHTML = '<div>search failed — check connection</div>';
-  }
-}
-searchBtn.addEventListener('click', runSearch);
-searchInput.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); runSearch(); } });
-document.addEventListener('click', e=>{
-  if(!searchResults.contains(e.target) && e.target !== searchInput) searchResults.style.display = 'none';
-});
-
-// Report Form Logic
-let tempMarker = null;
-let pendingLatLng = null;
-let selectedSev = null;
-const coordDisplay = document.getElementById('coordDisplay');
-const submitBtn = document.getElementById('submitBtn');
-
-function updateSubmitState(){
-  submitBtn.disabled = !(pendingLatLng && selectedSev);
-}
-
-map.on('click', function(e){
-  pendingLatLng = e.latlng;
-  coordDisplay.textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
-  if(tempMarker) map.removeLayer(tempMarker);
-  tempMarker = L.circleMarker(e.latlng, {radius:8, color:'#c99a3e', fillColor:'#c99a3e', fillOpacity:0.5, weight:2, dashArray:'3,3'}).addTo(map);
-  updateSubmitState();
-});
-
-document.querySelectorAll('.sev-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedSev = parseInt(btn.dataset.sev, 10);
-    updateSubmitState();
+// Map setup
+let map, markersGroup;
+function initMap(){
+  const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri Satellite', maxZoom: 18
   });
+  const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+
+  map = L.map('map', { layers: [satelliteLayer] }).setView([12.9716, 77.5946], 13);
+  L.control.layers({ "Satellite": satelliteLayer, "Dark Mode": darkLayer }).addTo(map);
+  markersGroup = L.layerGroup().addTo(map);
+}
+
+// Tabs switching
+let currentTab = 'active';
+document.getElementById('tabActive').addEventListener('click', ()=>{
+  currentTab = 'active';
+  document.getElementById('tabActive').classList.add('active');
+  document.getElementById('tabResolved').classList.remove('active');
+  document.getElementById('activeSection').style.display = 'block';
+  document.getElementById('resolvedSection').style.display = 'none';
+  render();
 });
-
-// Clustering and Scoring Algorithm
-const CLUSTER_RADIUS_M = 40;
-
-function haversine(a, b){
-  const R = 6371000;
-  const dLat = (b.lat-a.lat) * Math.PI/180;
-  const dLng = (b.lng-a.lng) * Math.PI/180;
-  const lat1 = a.lat * Math.PI/180, lat2 = b.lat * Math.PI/180;
-  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function clusterReports(points){
-  const clusters = [];
-  for(const p of points){
-    let placed = false;
-    for(const c of clusters){
-      if(haversine(c.centroid, p) <= CLUSTER_RADIUS_M){
-        c.points.push(p);
-        c.centroid = {
-          lat: c.points.reduce((s,q)=>s+q.lat,0)/c.points.length,
-          lng: c.points.reduce((s,q)=>s+q.lng,0)/c.points.length
-        };
-        placed = true;
-        break;
-      }
-    }
-    if(!placed){
-      clusters.push({ centroid: {lat:p.lat, lng:p.lng}, points:[p] });
-    }
-  }
-  return clusters;
-}
-
-function scoreCluster(c){
-  const count = c.points.length;
-  const avgSev = c.points.reduce((s,p)=>s+p.sev,0) / count;
-  const now = Date.now();
-  const mostRecent = Math.max(...c.points.map(p=>p.ts));
-  const daysAgo = (now - mostRecent) / (1000*60*60*24);
-  const recencyBonus = Math.max(0, 20 * (1 - daysAgo/30));
-  const score = (count * 10) + (avgSev * 8) + recencyBonus;
-  return { score, count, avgSev, daysAgo };
-}
-
-function tierOf(score){
-  if(score >= 45) return 1;
-  if(score >= 22) return 2;
-  return 3;
-}
-
-const clusterLayer = L.layerGroup().addTo(map);
+document.getElementById('tabResolved').addEventListener('click', ()=>{
+  currentTab = 'resolved';
+  document.getElementById('tabResolved').classList.add('active');
+  document.getElementById('tabActive').classList.remove('active');
+  document.getElementById('resolvedSection').style.display = 'block';
+  document.getElementById('activeSection').style.display = 'none';
+  render();
+});
 
 function render(){
-  const clusters = clusterReports(reports).map(c=>{
-    const s = scoreCluster(c);
-    return {...c, ...s, tier: tierOf(s.score)};
-  }).sort((a,b)=>b.score-a.score);
+  if(!map) return;
+  markersGroup.clearLayers();
 
-  clusterLayer.clearLayers();
-  const tierColor = {1:'#c1512f', 2:'#c99a3e', 3:'#4e7d5c'};
-  const maxScore = clusters.length ? clusters[0].score : 1;
-  clusters.forEach(c=>{
-    const radius = 8 + 12 * (c.score / maxScore);
-    L.circleMarker(c.centroid, {
-      radius, color: tierColor[c.tier], fillColor: tierColor[c.tier],
-      fillOpacity:0.45, weight:2
-    }).bindPopup(
-      `<b>${c.count} report${c.count>1?'s':''}</b><br>avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}`
-    ).addTo(clusterLayer);
+  const activeReports = reports.filter(r => r.status !== 'resolved');
+  const resolvedReports = reports.filter(r => r.status === 'resolved');
+
+  document.getElementById('activeCount').textContent = activeReports.length;
+  document.getElementById('resolvedCount').textContent = resolvedReports.length;
+
+  const displayReports = currentTab === 'active' ? activeReports : resolvedReports;
+
+  // Render Map Markers
+  displayReports.forEach(r => {
+    const color = r.status === 'resolved' ? '#25D366' : (r.sev === 3 ? '#c1512f' : r.sev === 2 ? '#c99a3e' : '#4e7d5c');
+    L.circleMarker([r.lat, r.lng], {
+      radius: 8, color: color, fillColor: color, fillOpacity: 0.7, weight: 2
+    }).bindPopup(`<b>${r.status === 'resolved' ? 'RESOLVED' : 'ACTIVE DUMP'}</b><br>Note: ${r.note || 'None'}`).addTo(markersGroup);
   });
 
-  const ledger = document.getElementById('ledger');
-  if(clusters.length === 0){
-    ledger.innerHTML = '<div class="ledger-empty">No reports yet. Log the first one to start the ledger.</div>';
-    return;
-  }
-  ledger.innerHTML = clusters.map((c,i)=>{
-    const pct = Math.min(100, (c.score/maxScore)*100);
-    const recentNote = c.daysAgo < 1 ? 'today' : `${Math.floor(c.daysAgo)}d ago`;
-    return `
-      <div class="ledger-row tier-${c.tier}">
-        <div class="rank">${i+1}</div>
-        <div class="ledger-body">
-          <div class="ledger-top">
-            <div class="ledger-title">${c.centroid.lat.toFixed(4)}, ${c.centroid.lng.toFixed(4)}</div>
-            <div class="ledger-score">score ${c.score.toFixed(0)}</div>
-          </div>
-          <div class="ledger-meta">${c.count} report${c.count>1?'s':''} · avg sev ${c.avgSev.toFixed(1)} · last seen ${recentNote}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+  // Render Cards
+  const activeList = document.getElementById('activeList');
+  const resolvedList = document.getElementById('resolvedList');
+
+  if(activeReports.length === 0){
+    activeList.innerHTML = '<div class="empty-msg">No pending active black spots!</div>';
+  } else {
+    activeList.innerHTML = activeReports.map((r, index) => `
+      <div class="spot-card">
+        <div class="spot-header">
+          <div class="spot-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
+          <span class="spot-sev sev-${r.sev}">SEVERITY ${r.sev}</span>
         </div>
-      </div>`;
-  }).join('');
+        <div class="spot-meta">
+          Logged: ${new Date(r.ts).toLocaleString()}<br>
+          Note: "${r.note || 'No description provided'}"
+        </div>
+        <button class="resolve-action-btn" onclick="openResolveModal('${r.docId || index}')">Mark as Resolved & Upload Proof</button>
+      </div>
+    `).join('');
+  }
+
+  if(resolvedReports.length === 0){
+    resolvedList.innerHTML = '<div class="empty-msg">No resolved items in archive.</div>';
+  } else {
+    resolvedList.innerHTML = resolvedReports.map(r => `
+      <div class="spot-card">
+        <div class="spot-header">
+          <div class="spot-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
+          <span class="spot-sev" style="background:#25D366; color:#000;">RESOLVED</span>
+        </div>
+        <div class="spot-meta">
+          Resolved: ${new Date(r.resolvedAt).toLocaleString()}<br>
+          Action Note: "${r.resolutionNote || 'Cleared area'}"
+        </div>
+        <div class="photo-comparison">
+          <div class="photo-box">
+            <img src="${r.beforePhoto}" alt="Before">
+            <label>Before Clearance</label>
+          </div>
+          <div class="photo-box">
+            <img src="${r.afterPhoto}" alt="After">
+            <label>After Clearance</label>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
-// Form Submit Handler
-document.getElementById('reportForm').addEventListener('submit', async function(e){
+// Convert image file to base64 string
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
+const modal = document.getElementById('resolveModal');
+window.openResolveModal = function(id){
+  selectedReportId = id;
+  modal.style.display = 'flex';
+};
+
+document.getElementById('cancelModalBtn').addEventListener('click', ()=>{ modal.style.display = 'none'; });
+
+document.getElementById('resolveForm').addEventListener('submit', async function(e){
   e.preventDefault();
-  if(!pendingLatLng || !selectedSev) return;
-  const report = {
-    lat: pendingLatLng.lat,
-    lng: pendingLatLng.lng,
-    sev: selectedSev,
-    note: document.getElementById('noteInput').value.trim(),
-    ts: Date.now()
+  const beforeFile = document.getElementById('beforePhotoInput').files[0];
+  const afterFile = document.getElementById('afterPhotoInput').files[0];
+  const note = document.getElementById('resolutionNoteInput').value.trim();
+
+  if(!beforeFile || !afterFile) return;
+
+  const beforeBase64 = await fileToBase64(beforeFile);
+  const afterBase64 = await fileToBase64(afterFile);
+
+  const resolutionData = {
+    status: 'resolved',
+    resolvedAt: Date.now(),
+    beforePhoto: beforeBase64,
+    afterPhoto: afterBase64,
+    resolutionNote: note
   };
-  await persistReport(report);
 
-  if(tempMarker){ map.removeLayer(tempMarker); tempMarker = null; }
-  pendingLatLng = null; selectedSev = null;
-  document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('noteInput').value = '';
-  coordDisplay.textContent = 'tap anywhere on the map above';
-  updateSubmitState();
+  // Sync to Firebase or LocalStorage
+  if(db && typeof selectedReportId === 'string' && selectedReportId.length > 10){
+    const reportRef = doc(db, "reports", selectedReportId);
+    await updateDoc(reportRef, resolutionData);
+  } else {
+    const idx = parseInt(selectedReportId, 10);
+    if(!isNaN(idx) && reports[idx]){
+      reports[idx] = { ...reports[idx], ...resolutionData };
+      localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
+    }
+  }
+
+  modal.style.display = 'none';
+  document.getElementById('resolveForm').reset();
+  render();
 });
-
-await initFirebase();
 </script>
 </body>
 </html>
