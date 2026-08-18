@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrashTagger — Report a Black Spot</title>
 
-<!-- Leaflet Satellite Map CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -25,77 +23,58 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
-  .wrap{max-width:800px;margin:0 auto;padding:20px 16px 60px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px;}
 
   .masthead{
     border-bottom:3px solid var(--paper); padding-bottom:12px; margin-bottom:20px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:26px;
-    margin:0; text-transform:uppercase; color:var(--paper);
+    font-family:'Archivo Black',sans-serif; font-size:24px; margin:0; text-transform:uppercase;
   }
   .masthead .meta{
-    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-top:4px;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-top:4px;
   }
 
-  /* Embedded Map */
-  .map-container{
-    position:relative; margin-bottom:24px;
-  }
   #map{
-    width:100%; height:320px; border:1px solid var(--line); border-radius:4px; cursor:crosshair;
-  }
-  .map-overlay-text{
-    position:absolute; top:10px; left:50%; transform:translateX(-50%);
-    background:rgba(23, 27, 25, 0.85); color:var(--amber); border:1px solid var(--amber);
-    padding:6px 12px; border-radius:2px; font-family:'IBM Plex Mono',monospace; font-size:11px;
-    z-index:400; pointer-events:none; letter-spacing:0.5px;
+    width:100%; height:380px; border:1px solid var(--line); border-radius:4px; margin-bottom:24px;
   }
 
-  .form-panel{
-    background:var(--card); border:1px solid var(--line); border-radius:4px; padding:20px;
-  }
   .panel-title{
-    font-family:'Oswald',sans-serif; font-size:16px; letter-spacing:1px;
-    text-transform:uppercase; margin-bottom:16px; border-left:3px solid var(--wet); padding-left:8px;
+    font-family:'Oswald',sans-serif; font-size:16px; letter-spacing:1.5px;
+    text-transform:uppercase; margin-bottom:14px; border-left:3px solid var(--wet); padding-left:8px;
   }
 
-  .form-group{margin-bottom:16px;}
-  .form-group label{
+  .form-card{
+    background:var(--card); border:1px solid var(--line); border-radius:4px; padding:16px;
+  }
+
+  .field-group{margin-bottom:14px;}
+  .field-group label{
     display:block; font-family:'IBM Plex Mono',monospace; font-size:11px;
     text-transform:uppercase; color:var(--paper-dim); margin-bottom:6px; letter-spacing:0.5px;
   }
-  
-  /* Coordinates Display */
-  .coords-display{
-    background:var(--card-2); border:1px dashed var(--line); padding:10px;
-    font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--paper); border-radius:2px;
-    text-align:center;
+
+  .coords-text{
+    font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--amber); padding:8px 0;
   }
 
-  select, textarea, input[type="file"] {
+  select, textarea, input[type="file"]{
     width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
-    padding:10px; font-family:'Inter',sans-serif; font-size:14px; border-radius:2px;
+    padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-radius:2px;
   }
-  select{ font-family:'Oswald',sans-serif; letter-spacing:1px; text-transform:uppercase; }
-  textarea{ resize:vertical; min-height:80px; }
-  textarea:focus, select:focus{ outline:1px solid var(--amber); }
+  textarea{ font-family:'Inter',sans-serif; font-size:13px; resize:vertical; min-height:70px; }
 
-  /* File Upload Styling */
-  input[type="file"] { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:8px; }
   .preview-thumb{
-    max-width:100%; height:160px; object-fit:cover; border:1px solid var(--line);
-    margin-top:10px; display:none; border-radius:2px;
+    max-width:100%; height:120px; object-fit:cover; border:1px solid var(--line);
+    margin-top:6px; display:none; border-radius:2px;
   }
 
   .submit-btn{
-    width:100%; padding:14px 0; background:var(--wet); color:#0a1a0e; border:none;
+    width:100%; padding:12px 0; background:var(--wet); color:#0a1a0e; border:none;
     border-radius:2px; font-family:'Oswald',sans-serif; font-weight:600;
-    font-size:15px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; margin-top:10px;
+    font-size:14px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; margin-top:10px;
   }
-  .submit-btn:disabled{opacity:0.5; cursor:not-allowed; background:var(--line); color:var(--paper-dim);}
-  .submit-btn:hover:not(:disabled){background:#5c9270;}
-
+  .submit-btn:disabled{opacity:0.5; cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -106,43 +85,40 @@
     <div class="meta">CITIZEN REPORTING PORTAL • BBMP SANITATION</div>
   </div>
 
-  <div class="map-container">
-    <div class="map-overlay-text">TAP ON THE MAP TO PIN THE EXACT BLACK SPOT</div>
-    <div id="map"></div>
-  </div>
+  <div id="map"></div>
 
-  <div class="form-panel">
-    <div class="panel-title">Report Details</div>
-    
+  <div class="form-card">
+    <div class="panel-title">Submit Black Spot Report</div>
     <form id="reportForm">
-      <div class="form-group">
-        <label>Selected Location</label>
-        <div class="coords-display" id="coordsDisplay">Awaiting pin drop...</div>
+      
+      <div class="field-group">
+        <label>1. Location Coordinates</label>
+        <div class="coords-text" id="coordsText">Click anywhere on the map to pin location...</div>
       </div>
 
-      <div class="form-group">
-        <label>Severity Level</label>
+      <div class="field-group">
+        <label>2. Severity Level</label>
         <select id="severityInput" required>
           <option value="" disabled selected>-- Select Severity --</option>
-          <option value="LOW">LOW (Small pile, scattered litter)</option>
-          <option value="MEDIUM">MEDIUM (Moderate dumping, blocking path)</option>
-          <option value="HIGH">HIGH (Hazardous, large scale dumping)</option>
+          <option value="LOW">LOW</option>
+          <option value="MEDIUM">MEDIUM</option>
+          <option value="HIGH">HIGH</option>
         </select>
       </div>
 
-      <!-- Optional Image Upload Feature -->
-      <div class="form-group">
-        <label>Add a Photo (Optional)</label>
-        <input type="file" id="imageInput" accept="image/*">
-        <img id="imagePreview" class="preview-thumb" alt="Selected Photo Preview">
+      <!-- Optional File / PNG Photo Upload -->
+      <div class="field-group">
+        <label>3. Upload Photo / PNG (Optional)</label>
+        <input type="file" id="photoInput" accept="image/png, image/jpeg, image/*">
+        <img id="photoPreview" class="preview-thumb" alt="Preview">
       </div>
 
-      <div class="form-group">
-        <label>Additional Notes (Optional)</label>
-        <textarea id="noteInput" placeholder="E.g., Near the transformer, mostly construction debris..."></textarea>
+      <div class="field-group">
+        <label>4. Additional Notes (Optional)</label>
+        <textarea id="noteInput" placeholder="Add details..."></textarea>
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit Report</button>
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>Log Report</button>
     </form>
   </div>
 </div>
@@ -164,7 +140,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Initialize Leaflet Map (Satellite)
 const map = L.map('map').setView([12.9716, 77.5946], 13);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Tiles &copy; Esri',
@@ -174,110 +149,69 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
 let currentMarker = null;
 let selectedLat = null;
 let selectedLng = null;
-const submitBtn = document.getElementById('submitBtn');
-const coordsDisplay = document.getElementById('coordsDisplay');
+let base64Photo = null;
 
-// Map Click to drop a pin
-map.on('click', function(e) {
+const submitBtn = document.getElementById('submitBtn');
+const coordsText = document.getElementById('coordsText');
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+
+map.on('click', (e) => {
   selectedLat = e.latlng.lat;
   selectedLng = e.latlng.lng;
-
-  if (currentMarker) {
-    map.removeLayer(currentMarker);
-  }
-  
+  if (currentMarker) map.removeLayer(currentMarker);
   currentMarker = L.marker([selectedLat, selectedLng]).addTo(map);
-  coordsDisplay.textContent = `${selectedLat.toFixed(6)}, ${selectedLng.toFixed(6)}`;
-  coordsDisplay.style.color = 'var(--amber)';
-  coordsDisplay.style.borderColor = 'var(--amber)';
+  coordsText.textContent = `📍 ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
   submitBtn.disabled = false;
 });
 
-// Image Upload Logic
-const imageInput = document.getElementById('imageInput');
-const imagePreview = document.getElementById('imagePreview');
-let base64Image = null;
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        let scale = 1;
-        if (img.width > MAX_WIDTH) scale = MAX_WIDTH / img.width;
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to jpeg
-      };
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-imageInput.addEventListener('change', async (e) => {
+// Optional Photo Conversion to Base64
+photoInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) {
-    base64Image = await fileToBase64(file);
-    imagePreview.src = base64Image;
-    imagePreview.style.display = 'block';
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      base64Photo = event.target.result;
+      photoPreview.src = base64Photo;
+      photoPreview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
   } else {
-    base64Image = null;
-    imagePreview.style.display = 'none';
+    base64Photo = null;
+    photoPreview.style.display = 'none';
   }
 });
 
-// Form Submission
 document.getElementById('reportForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
-  if (!selectedLat || !selectedLng) {
-    alert("Please tap the map to pin the location first.");
-    return;
-  }
-
-  const severity = document.getElementById('severityInput').value;
-  const note = document.getElementById('noteInput').value.trim();
+  if (!selectedLat || !selectedLng) return;
 
   submitBtn.disabled = true;
-  submitBtn.textContent = "SENDING REPORT...";
+  submitBtn.textContent = "Logging...";
 
   try {
     await addDoc(collection(db, "reports"), {
       lat: selectedLat,
       lng: selectedLng,
-      sev: severity,
-      note: note,
-      initialImage: base64Image, // Saves the base64 string if uploaded, otherwise null
+      sev: document.getElementById('severityInput').value,
+      note: document.getElementById('noteInput').value.trim(),
+      initialImage: base64Photo || null,
       status: 'active',
       ts: Date.now()
     });
 
-    alert("Report logged successfully! Thank you for keeping BBMP clean.");
-    
-    // Reset form
+    alert("Report logged successfully!");
     document.getElementById('reportForm').reset();
-    if(currentMarker) map.removeLayer(currentMarker);
-    selectedLat = null;
-    selectedLng = null;
-    coordsDisplay.textContent = "Awaiting pin drop...";
-    coordsDisplay.style.color = "var(--paper)";
-    coordsDisplay.style.borderColor = "var(--line)";
-    base64Image = null;
-    imagePreview.style.display = 'none';
-    submitBtn.textContent = "Submit Report";
-    
+    if (currentMarker) map.removeLayer(currentMarker);
+    coordsText.textContent = "Click anywhere on the map to pin location...";
+    base64Photo = null;
+    photoPreview.style.display = 'none';
+    submitBtn.textContent = "Log Report";
   } catch (err) {
-    console.error("Error adding document: ", err);
-    alert("Failed to send report. Please try again.");
+    console.error("Error logging report:", err);
+    alert("Failed to submit report.");
     submitBtn.disabled = false;
-    submitBtn.textContent = "Submit Report";
+    submitBtn.textContent = "Log Report";
   }
 });
 </script>
