@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Spot Ledger</title>
+<title>TrashTagger — Community Waste Tracker</title>
 
 <!-- Open Graph Meta Tags for WhatsApp Link Preview -->
-<meta property="og:title" content="Black Spot Ledger — Civic Sanitation Tracker">
-<meta property="og:description" content="Track and report waste dumping black spots in real-time. Tap the map to log a spot.">
+<meta property="og:title" content="TrashTagger — Community Waste Tracker">
+<meta property="og:description" content="Tag and track illegal waste dump sites in real time. Help map black spots and keep our streets clean.">
 <meta property="og:type" content="website">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -33,11 +33,11 @@
 
   .masthead{
     display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:4px;
+    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:14px;
     flex-wrap:wrap; gap:8px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,5vw,34px);
+    font-family:'Archivo Black',sans-serif; font-size:clamp(24px,5vw,36px);
     letter-spacing:0.5px; margin:0; text-transform:uppercase;
   }
   .masthead h1 span{color:var(--hazard);}
@@ -45,17 +45,27 @@
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
     text-align:right; line-height:1.5;
   }
-  .subline{
-    font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:2px;
-    text-transform:uppercase; color:var(--paper-dim); margin:6px 0 16px;
-    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+
+  .intro-card{
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--wa-green);
+    border-radius:3px; padding:14px 16px; margin-bottom:18px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+  }
+  .intro-text{
+    flex:1; min-width:260px; font-family:'Inter',sans-serif; font-size:13px; line-height:1.55; color:var(--paper);
+  }
+  .intro-text b{color:#fff;}
+  .intro-sub{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-top:4px;
   }
 
   .share-btn{
     background:var(--wa-green); color:#0a2010; border:none; border-radius:3px;
-    padding:6px 12px; font-family:'Oswald',sans-serif; font-weight:600;
-    font-size:12px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
-    display:inline-flex; align-items:center; gap:6px;
+    padding:10px 16px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    box-shadow: 0 2px 6px rgba(37,211,102,0.2);
+    transition: background 0.2s;
   }
   .share-btn:hover{background:#20bd5a;}
 
@@ -207,11 +217,16 @@
 <div class="wrap">
 
   <div class="masthead">
-    <h1>Black<span>Spot</span> Ledger</h1>
-    <div class="meta">CIVIC SANITATION REPORT<br>WARD-LEVEL WASTE TRACKING</div>
+    <h1>Trash<span>Tagger</span></h1>
+    <div class="meta">CIVIC SANITATION TRACKER<br>COMMUNITY WASTE MAPPING</div>
   </div>
-  <div class="subline">
-    <span>tap the map to log a dump site — repeat reports raise the alert</span>
+
+  <!-- Brief Overview Banner -->
+  <div class="intro-card">
+    <div class="intro-text">
+      <b>TrashTagger</b> is a community tool to map, report, and rank illegal waste dump spots in real-time. Tap the satellite map to log a spot—repeat reports automatically raise priority alert scores for civic action.
+      <div class="intro-sub">Help us build a cleaner neighborhood. Share this link with your local WhatsApp groups!</div>
+    </div>
     <button class="share-btn" id="shareBtn">Share on WhatsApp</button>
   </div>
 
@@ -374,10 +389,10 @@ locate();
 
 // WhatsApp Sharing
 document.getElementById('shareBtn').addEventListener('click', () => {
-  const text = encodeURIComponent("Log and track civic waste dump spots on the Black Spot Ledger:");
+  const text = encodeURIComponent("Log and track civic waste dump spots on TrashTagger:");
   const url = encodeURIComponent(window.location.href);
   if (navigator.share) {
-    navigator.share({ title: 'Black Spot Ledger', text: 'Civic Sanitation Tracker', url: window.location.href });
+    navigator.share({ title: 'TrashTagger', text: 'Community Waste Tracker', url: window.location.href });
   } else {
     window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, '_blank');
   }
