@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrashTagger — BBMP Sanitation Authority Portal</title>
+<title>TrashTagger Authority Portal — BBMP Sanitation</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
   :root{
     --ink:#171b19;
@@ -22,385 +24,282 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
-  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px;}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 60px;}
 
-  /* Header */
   .masthead{
     display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:14px;
+    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:20px;
     flex-wrap:wrap; gap:8px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,4vw,32px);
-    letter-spacing:0.5px; margin:0; text-transform:uppercase;
+    font-family:'Archivo Black',sans-serif; font-size:26px;
+    margin:0; text-transform:uppercase; display:flex; align-items:center; gap:10px;
   }
-  .masthead h1 span{color:var(--amber);}
+  .masthead h1 span.badge{
+    background:var(--hazard); color:#fff; font-size:12px; font-family:'IBM Plex Mono',monospace;
+    padding:3px 8px; border-radius:2px; letter-spacing:1px;
+  }
   .masthead .meta{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
-    text-align:right; line-height:1.5;
   }
 
-  /* Auth Overlay */
-  #authOverlay{
-    position:fixed; top:0; left:0; width:100vw; height:100vh;
-    background:var(--ink); z-index:9999; display:flex; align-items:center; justify-content:center;
-    padding:20px;
-  }
-  .auth-card{
-    background:var(--card); border:1px solid var(--line); border-radius:4px;
-    padding:28px 24px; max-width:400px; width:100%; text-align:center;
-  }
-  .auth-card h2{
-    font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1px; margin:0 0 8px; color:var(--paper);
-  }
-  .auth-card p{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-bottom:20px;}
-  .auth-card input{
-    width:100%; padding:10px 12px; background:var(--ink); border:1px solid var(--line);
-    color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px; border-radius:2px; margin-bottom:14px; text-align:center;
-  }
-  .auth-card button{
-    width:100%; padding:10px 0; background:var(--amber); color:var(--ink); border:none;
-    font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; letter-spacing:1px;
-    text-transform:uppercase; cursor:pointer; border-radius:2px;
-  }
-  .auth-card button:hover{background:#d8aa4a;}
-  .auth-error{color:var(--hazard); font-family:'IBM Plex Mono',monospace; font-size:11px; margin-top:10px; display:none;}
-
-  /* Stats Bar */
-  .stats-row{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
-  .stat-box{
-    flex:1; min-width:140px; background:var(--card); border:1px solid var(--line);
-    padding:12px 14px; border-radius:3px; font-family:'IBM Plex Mono',monospace;
-  }
-  .stat-num{font-family:'Archivo Black',sans-serif; font-size:24px; color:var(--paper); margin-top:4px;}
-  .stat-label{font-size:10px; color:var(--paper-dim); text-transform:uppercase; letter-spacing:0.5px;}
-
-  /* Section Titles */
-  .panel-label{
-    font-family:'Oswald',sans-serif; font-size:14px; letter-spacing:2px;
-    text-transform:uppercase; color:var(--paper); margin:24px 0 14px;
-    border-left:3px solid var(--amber); padding-left:8px;
-    display:flex; justify-content:space-between; align-items:center;
+  .panel-title{
+    font-family:'Oswald',sans-serif; font-size:16px; letter-spacing:1.5px;
+    text-transform:uppercase; margin-bottom:14px; border-left:3px solid var(--wet); padding-left:8px;
   }
 
-  /* Issue Cards Grid */
-  .cards-grid{display:grid; grid-template-columns:1fr; gap:14px;}
-  @media(min-width:700px){ .cards-grid{grid-template-columns:1fr 1fr;} }
+  .report-list{display:flex; flex-direction:column; gap:14px;}
+  .report-card{
+    background:var(--card); border:1px solid var(--line); border-radius:4px; padding:16px;
+    display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;
+  }
+  .report-info{flex:1; min-width:280px;}
+  .report-coords{
+    font-family:'Oswald',sans-serif; font-size:18px; color:var(--paper); letter-spacing:0.5px;
+  }
+  .report-meta{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-top:6px; line-height:1.6;
+  }
+  .report-note{
+    background:var(--ink); border:1px solid var(--line); border-radius:3px; padding:8px 10px;
+    font-size:12.5px; margin-top:8px; color:var(--paper);
+  }
 
-  .issue-card{
-    background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px;
-    display:flex; flex-direction:column; justify-content:space-between; position:relative;
-  }
-  .issue-card.tier-1{border-left:4px solid var(--hazard);}
-  .issue-card.tier-2{border-left:4px solid var(--amber);}
-  .issue-card.tier-3{border-left:4px solid var(--wet);}
-  .issue-card.tier-resolved{border-left:4px solid var(--resolved); opacity:0.85;}
-
-  .card-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;}
-  .card-coords{
-    font-family:'Oswald',sans-serif; font-size:15px; letter-spacing:0.5px;
-    text-transform:uppercase; color:var(--paper); text-decoration:none;
-  }
-  .card-coords:hover{text-decoration:underline; color:var(--amber);}
-  .sev-badge{
-    font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 6px; border-radius:2px;
-    font-weight:600; text-transform:uppercase; white-space:nowrap;
-  }
-  .sev-badge.high{background:var(--hazard); color:#fff;}
-  .sev-badge.med{background:var(--amber); color:var(--ink);}
-  .sev-badge.low{background:var(--wet); color:#fff;}
-  .sev-badge.resolved{background:var(--resolved); color:#fff;}
-
-  .card-notes{
-    font-family:'Inter',sans-serif; font-size:12.5px; color:var(--paper); margin:8px 0;
-    background:var(--ink); padding:8px 10px; border-radius:2px; border:1px solid var(--line);
-    min-height:38px;
-  }
-  .card-meta{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--paper-dim); margin-bottom:12px;}
-
-  /* Action Form inside Card */
-  .action-box{
-    margin-top:10px; padding-top:12px; border-top:1px dashed var(--line);
-  }
-  .action-box label{
-    display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--paper-dim);
-    text-transform:uppercase; margin-bottom:6px;
-  }
-  .file-input{
-    width:100%; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
-    margin-bottom:8px;
-  }
   .resolve-btn{
-    width:100%; padding:9px 0; background:var(--wet); color:#0e130f; border:none;
-    font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:1px;
-    text-transform:uppercase; font-size:12px; cursor:pointer; border-radius:2px;
+    background:var(--wet); color:#0a1a0e; border:none; border-radius:3px;
+    padding:10px 16px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
   }
   .resolve-btn:hover{background:#5c9270;}
-  .resolve-btn:disabled{opacity:0.5; cursor:not-allowed;}
 
-  /* Proof Image Preview */
-  .proof-img{
-    width:100%; max-height:160px; object-fit:cover; border-radius:2px; margin-top:8px;
-    border:1px solid var(--line);
+  /* Resolution Modal */
+  .modal-overlay{
+    display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:rgba(10,13,11,0.9); z-index:9999; justify-content:center; align-items:center; padding:20px;
+  }
+  .modal-box{
+    background:var(--card); border:1px solid var(--line); border-radius:4px;
+    padding:22px; max-width:500px; width:100%; position:relative;
+  }
+  .modal-close{
+    position:absolute; top:12px; right:14px; background:none; border:none;
+    color:var(--paper-dim); font-size:20px; cursor:pointer;
+  }
+  .modal-close:hover{color:var(--paper);}
+  .modal-heading{
+    font-family:'Oswald',sans-serif; font-size:18px; text-transform:uppercase;
+    margin:0 0 16px; letter-spacing:1px; color:var(--paper);
   }
 
-  .empty-msg{
-    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim);
-    padding:30px; text-align:center; background:var(--card); border:1px dashed var(--line); grid-column:1 / -1;
+  .file-group{margin-bottom:16px;}
+  .file-group label{
+    display:block; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-transform:uppercase; color:var(--amber); margin-bottom:6px; letter-spacing:0.5px;
+  }
+  .file-group input[type="file"]{
+    width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
+    padding:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; border-radius:2px;
+  }
+  .preview-thumb{
+    max-width:100%; height:120px; object-fit:cover; border:1px solid var(--line);
+    margin-top:6px; display:none; border-radius:2px;
   }
 
-  ::-webkit-scrollbar{width:7px;}
-  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+  .submit-resolve-btn{
+    width:100%; padding:12px 0; background:var(--wet); color:#0a1a0e; border:none;
+    border-radius:2px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:14px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; margin-top:10px;
+  }
+  .submit-resolve-btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  .empty-state{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--paper-dim);
+    text-align:center; padding:40px 0; border:1px dashed var(--line); border-radius:4px;
+  }
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<!-- Login Authentication Modal -->
-<div id="authOverlay">
-  <div class="auth-card">
-    <h2>Authority Portal</h2>
-    <p>BBMP Sanitation Control Room Access</p>
-    <input type="password" id="passwordInput" placeholder="Enter Portal Password">
-    <button id="loginBtn">Authenticate</button>
-    <div class="auth-error" id="authError">Invalid Password. Please try again.</div>
+  <div class="masthead">
+    <h1>TrashTagger <span class="badge">AUTHORITY PORTAL</span></h1>
+    <div class="meta">SANITATION ACTION & RESOLUTION CONTROL</div>
   </div>
+
+  <div class="panel-title">Active Reported Spots Requiring Cleanup</div>
+
+  <div class="report-list" id="reportList">
+    <div class="empty-state">Loading active reports…</div>
+  </div>
+
 </div>
 
-<div class="wrap">
-  <div class="masthead">
-    <h1>Trash<span>Tagger</span> Authority</h1>
-    <div class="meta">BBMP CIVIC DASHBOARD<br>CLEARED SPOT VERIFICATION</div>
-  </div>
+<!-- Resolve Action Modal -->
+<div class="modal-overlay" id="resolveModal">
+  <div class="modal-box">
+    <button class="modal-close" id="closeModal">✕</button>
+    <div class="modal-heading">Clear & Attach Resolution Proof</div>
+    <form id="resolveForm">
+      
+      <!-- Upload 1: Before Image -->
+      <div class="file-group">
+        <label>1. Before Cleanup Photo (Initial Condition)</label>
+        <input type="file" id="beforeImgInput" accept="image/*" required>
+        <img id="beforePreview" class="preview-thumb" alt="Before Preview">
+      </div>
 
-  <div class="stats-row">
-    <div class="stat-box">
-      <div class="stat-label">Total Reports</div>
-      <div class="stat-num" id="statTotal">0</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label">Pending Action</div>
-      <div class="stat-num" id="statActive" style="color:var(--hazard);">0</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label">Resolved / Cleared</div>
-      <div class="stat-num" id="statResolved" style="color:var(--wet);">0</div>
-    </div>
-  </div>
+      <!-- Upload 2: After Image -->
+      <div class="file-group">
+        <label>2. After Cleanup Photo (Cleared Spot)</label>
+        <input type="file" id="afterImgInput" accept="image/*" required>
+        <img id="afterPreview" class="preview-thumb" alt="After Preview">
+      </div>
 
-  <p class="panel-label">Active Black Spots requiring action</p>
-  <div class="cards-grid" id="activeGrid">
-    <div class="empty-msg">Loading active reports...</div>
-  </div>
-
-  <p class="panel-label" style="border-color:var(--resolved);">Resolved & Cleared Archives</p>
-  <div class="cards-grid" id="resolvedGrid">
-    <div class="empty-msg">No resolved spots yet.</div>
+      <button type="submit" class="submit-resolve-btn" id="saveResolveBtn">Confirm Cleanup & Mark Resolved</button>
+    </form>
   </div>
 </div>
 
 <script type="module">
-/* YOUR LIVE FIREBASE CONFIG */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCQiMeEqEny83vT8tFDTyHIIhw-6GSWxa0",
   authDomain: "blackspot-ledger.firebaseapp.com",
   projectId: "blackspot-ledger",
   storageBucket: "blackspot-ledger.firebasestorage.app",
   messagingSenderId: "858874785569",
-  appId: "1:858874785569:web:3b73d8981bc22bc0c1d860",
-  measurementId: "G-MQ0WBXET6E"
+  appId: "1:858874785569:web:3b73d8981bc22bc0c1d860"
 };
 
-/* --- AUTHORITY PASSWORD SETTING --- */
-const PASSWORD = "trashtagger@123";
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
-let db = null, collection, onSnapshot, doc, updateDoc;
-let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
+let activeDocId = null;
+let beforeBase64 = null;
+let afterBase64 = null;
 
-// Auth handler
-const authOverlay = document.getElementById('authOverlay');
-const passwordInput = document.getElementById('passwordInput');
-const loginBtn = document.getElementById('loginBtn');
-const authError = document.getElementById('authError');
+const resolveModal = document.getElementById('resolveModal');
+const beforeImgInput = document.getElementById('beforeImgInput');
+const afterImgInput = document.getElementById('afterImgInput');
+const beforePreview = document.getElementById('beforePreview');
+const afterPreview = document.getElementById('afterPreview');
 
-function checkAuth(){
-  if(sessionStorage.getItem('tt_auth_granted') === 'true'){
-    authOverlay.style.display = 'none';
-  }
-}
-checkAuth();
-
-loginBtn.addEventListener('click', ()=>{
-  if(passwordInput.value === PASSWORD){
-    sessionStorage.setItem('tt_auth_granted', 'true');
-    authOverlay.style.display = 'none';
-  } else {
-    authError.style.display = 'block';
-  }
+document.getElementById('closeModal').addEventListener('click', () => {
+  resolveModal.style.display = 'none';
 });
-passwordInput.addEventListener('keydown', e=>{ if(e.key==='Enter') loginBtn.click(); });
 
-// Image Compression Helper
-function compressImage(file, maxWidth = 600, quality = 0.6) {
+// Helper: Convert file to compressed Base64 Data URL
+function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
+    reader.onload = (e) => {
       const img = new Image();
-      img.src = event.target.result;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
+        const MAX_WIDTH = 800;
+        let scale = 1;
+        if (img.width > MAX_WIDTH) scale = MAX_WIDTH / img.width;
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
       };
-      img.onerror = (err) => reject(err);
+      img.src = e.target.result;
     };
-    reader.onerror = (err) => reject(err);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
-// Globally bound Resolution function
-window.confirmResolution = async function(identifier, btnElement) {
-  const fileInput = document.getElementById(`file-${identifier}`);
-  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-    alert("Please select a clean-up proof image first.");
-    return;
+beforeImgInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    beforeBase64 = await fileToBase64(file);
+    beforePreview.src = beforeBase64;
+    beforePreview.style.display = 'block';
   }
+});
 
-  btnElement.disabled = true;
-  btnElement.textContent = "Compressing & Saving...";
-
-  try {
-    const compressedImage = await compressImage(fileInput.files[0]);
-
-    if (isConfigured && db) {
-      const docRef = doc(db, "reports", identifier);
-      await updateDoc(docRef, {
-        status: "resolved",
-        proofImage: compressedImage,
-        resolvedAt: Date.now()
-      });
-    } else {
-      const targetIndex = reports.findIndex(r => r.docId === identifier || r.ts.toString() === identifier);
-      if (targetIndex !== -1) {
-        reports[targetIndex].status = "resolved";
-        reports[targetIndex].proofImage = compressedImage;
-        reports[targetIndex].resolvedAt = Date.now();
-        localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
-      }
-    }
-
-    alert("Spot marked as RESOLVED and proof logged!");
-    render();
-  } catch (err) {
-    console.error("Resolution update failed:", err);
-    alert("Error updating status: " + err.message);
-  } finally {
-    btnElement.disabled = false;
-    btnElement.textContent = "Confirm Resolution";
+afterImgInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    afterBase64 = await fileToBase64(file);
+    afterPreview.src = afterBase64;
+    afterPreview.style.display = 'block';
   }
+});
+
+window.openResolveModal = function(docId) {
+  activeDocId = docId;
+  beforeBase64 = null;
+  afterBase64 = null;
+  beforeImgInput.value = '';
+  afterImgInput.value = '';
+  beforePreview.style.display = 'none';
+  afterPreview.style.display = 'none';
+  resolveModal.style.display = 'flex';
 };
 
-async function initFirebase(){
-  if(!isConfigured){
-    render();
+document.getElementById('resolveForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!activeDocId || !beforeBase64 || !afterBase64) {
+    alert("Please upload both Before and After cleanup photos.");
     return;
   }
+
+  const saveBtn = document.getElementById('saveResolveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Updating Record...";
+
   try {
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
-    const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
-    collection = fs.collection; onSnapshot = fs.onSnapshot; doc = fs.doc; updateDoc = fs.updateDoc;
-    const app = initializeApp(firebaseConfig);
-    db = fs.getFirestore(app);
-    const reportsCol = collection(db, "reports");
-    
-    onSnapshot(reportsCol, (snapshot) => {
-      reports = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
-      localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
-      render();
+    const reportRef = doc(db, "reports", activeDocId);
+    await updateDoc(reportRef, {
+      status: 'resolved',
+      beforeImage: beforeBase64,
+      afterImage: afterBase64,
+      proofImage: afterBase64, // Fallback for single-image views
+      resolvedAt: Date.now()
     });
-  } catch(e) {
-    console.warn("Firebase authority fallback:", e);
-    render();
+
+    resolveModal.style.display = 'none';
+    alert("Spot successfully resolved and proof updated!");
+  } catch (err) {
+    console.error("Error resolving report:", err);
+    alert("Failed to update status. Please try again.");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Confirm Cleanup & Mark Resolved";
   }
-}
+});
 
-function render(){
-  const activeReports = reports.filter(r => r.status !== 'resolved');
-  const resolvedReports = reports.filter(r => r.status === 'resolved');
+// Real-time listener for active reports
+onSnapshot(collection(db, "reports"), (snapshot) => {
+  const reports = snapshot.docs
+    .map(d => ({ docId: d.id, ...d.data() }))
+    .filter(r => r.status !== 'resolved');
 
-  document.getElementById('statTotal').textContent = reports.length;
-  document.getElementById('statActive').textContent = activeReports.length;
-  document.getElementById('statResolved').textContent = resolvedReports.length;
+  const reportList = document.getElementById('reportList');
+  if (reports.length === 0) {
+    reportList.innerHTML = `<div class="empty-state">🎉 All reported black spots are currently cleared!</div>`;
+    return;
+  }
 
-  const activeGrid = document.getElementById('activeGrid');
-  if(activeReports.length === 0){
-    activeGrid.innerHTML = '<div class="empty-msg">No active black spots currently logged. All clean!</div>';
-  } else {
-    activeGrid.innerHTML = activeReports.map(r => {
-      const key = r.docId || r.ts;
-      const mapUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
-      const dateStr = new Date(r.ts).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' });
-      const sevLabel = r.sev === 3 ? 'HIGH' : (r.sev === 2 ? 'MED' : 'LOW');
-      const sevClass = r.sev === 3 ? 'high' : (r.sev === 2 ? 'med' : 'low');
-
-      return `
-        <div class="issue-card tier-${r.sev}">
-          <div>
-            <div class="card-top">
-              <a href="${mapUrl}" target="_blank" class="card-coords">${r.lat.toFixed(4)}, ${r.lng.toFixed(4)} ↗</a>
-              <span class="sev-badge ${sevClass}">${sevLabel} SEVERITY</span>
-            </div>
-            <div class="card-meta">Reported: ${dateStr}</div>
-            <div class="card-notes">${r.note || 'No notes attached.'}</div>
-          </div>
-          <div class="action-box">
-            <label>Upload Resolution Proof Photo</label>
-            <input type="file" class="file-input" id="file-${key}" accept="image/*">
-            <button class="resolve-btn" onclick="window.confirmResolution('${key}', this)">Confirm Resolution</button>
-          </div>
+  reportList.innerHTML = reports.map(r => `
+    <div class="report-card">
+      <div class="report-info">
+        <div class="report-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
+        <div class="report-meta">
+          SEVERITY: Level ${r.sev} &nbsp;·&nbsp; LOGGED: ${new Date(r.ts).toLocaleString('en-IN')}
         </div>
-      `;
-    }).join('');
-  }
-
-  const resolvedGrid = document.getElementById('resolvedGrid');
-  if(resolvedReports.length === 0){
-    resolvedGrid.innerHTML = '<div class="empty-msg">No resolved spots in history.</div>';
-  } else {
-    resolvedGrid.innerHTML = resolvedReports.map(r => {
-      const mapUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
-      const resolvedDate = r.resolvedAt ? new Date(r.resolvedAt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }) : 'Recently';
-
-      return `
-        <div class="issue-card tier-resolved">
-          <div>
-            <div class="card-top">
-              <a href="${mapUrl}" target="_blank" class="card-coords">${r.lat.toFixed(4)}, ${r.lng.toFixed(4)} ↗</a>
-              <span class="sev-badge resolved">CLEARED</span>
-            </div>
-            <div class="card-meta">Resolved on: ${resolvedDate}</div>
-            <div class="card-notes">${r.note || 'No original notes.'}</div>
-          </div>
-          ${r.proofImage ? `<img src="${r.proofImage}" class="proof-img" alt="Resolution Proof">` : ''}
-        </div>
-      `;
-    }).join('');
-  }
-}
-
-await initFirebase();
+        ${r.note ? `<div class="report-note">Note: "${r.note}"</div>` : ''}
+      </div>
+      <button class="resolve-btn" onclick="openResolveModal('${r.docId}')">Resolve Spot</button>
+    </div>
+  `).join('');
+});
 </script>
 </body>
 </html>
