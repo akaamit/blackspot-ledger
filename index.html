@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrashTagger — Community Waste Tracker</title>
+<title>TrashTagger by Amit Patil — Community Waste Tracker</title>
 
 <!-- Open Graph Meta Tags for WhatsApp Link Preview -->
-<meta property="og:title" content="TrashTagger — Community Waste Tracker">
+<meta property="og:title" content="TrashTagger by Amit Patil — Community Waste Tracker">
 <meta property="og:description" content="Tag and track illegal waste dump sites in real time. Help map black spots and keep our streets clean.">
 <meta property="og:type" content="website">
 
@@ -38,10 +38,15 @@
     flex-wrap:wrap; gap:8px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:clamp(24px,5vw,36px);
+    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,4.5vw,34px);
     letter-spacing:0.5px; margin:0; text-transform:uppercase;
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:8px;
   }
-  .masthead h1 span{color:var(--hazard);}
+  .masthead h1 span.brand{color:var(--hazard);}
+  .masthead h1 span.author-credit{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:400;
+    color:var(--paper-dim); text-transform:none; letter-spacing:0;
+  }
   .masthead .meta{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
     text-align:right; line-height:1.5;
@@ -180,9 +185,9 @@
   .ledger-row.tier-2 .rank{color:var(--amber);}
   .ledger-row.tier-resolved .rank{color:var(--resolved);}
   .ledger-body{flex:1; min-width:0;}
-  .ledger-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
+  .ledger-top{display:flex; justify-content:space-between; gap:8px; align-items:center;}
   .ledger-title{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;}
-  .ledger-score{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap;}
+  .ledger-score{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap; display:flex; align-items:center; gap:6px;}
   .bar-track{height:5px; background:var(--ink); border-radius:3px; margin-top:7px; overflow:hidden;}
   .bar-fill{height:100%; border-radius:3px;}
   .tier-1 .bar-fill{background:var(--hazard);}
@@ -193,6 +198,40 @@
   .badge-resolved{
     background:var(--resolved); color:var(--paper); font-family:'IBM Plex Mono',monospace;
     font-size:10px; padding:2px 6px; border-radius:2px; font-weight:600; text-transform:uppercase;
+  }
+
+  /* Proof Button Style */
+  .proof-btn{
+    background:var(--wet); color:#0e130f; border:none; border-radius:2px;
+    padding:3px 8px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:11px; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .proof-btn:hover{background:#5c9270;}
+
+  /* Proof Modal Overlay */
+  #proofModal{
+    display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:rgba(10,13,11,0.88); z-index:99999; justify-content:center; align-items:center;
+    padding:20px;
+  }
+  .proof-modal-content{
+    background:var(--card); border:1px solid var(--line); padding:20px;
+    max-width:550px; width:100%; text-align:center; position:relative; border-radius:4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .proof-modal-close{
+    position:absolute; top:12px; right:14px; background:none; border:none;
+    color:var(--paper-dim); font-size:20px; cursor:pointer; font-weight:bold;
+  }
+  .proof-modal-close:hover{color:var(--paper);}
+  .proof-modal-title{
+    font-family:'Oswald',sans-serif; font-size:16px; margin:0 0 12px;
+    text-transform:uppercase; color:var(--paper); letter-spacing:1px;
+  }
+  .proof-modal-img{
+    max-width:100%; max-height:65vh; border-radius:2px; border:1px solid var(--line);
+    object-fit:contain; background:var(--ink);
   }
 
   .algo-note{
@@ -225,7 +264,7 @@
 <div class="wrap">
 
   <div class="masthead">
-    <h1>Trash<span>Tagger</span></h1>
+    <h1>Trash<span class="brand">Tagger</span> <span class="author-credit">by Amit Patil</span></h1>
     <div class="meta">CIVIC SANITATION TRACKER<br>COMMUNITY WASTE MAPPING</div>
   </div>
 
@@ -297,6 +336,15 @@
 
 </div>
 
+<!-- Proof Modal -->
+<div id="proofModal">
+  <div class="proof-modal-content">
+    <button class="proof-modal-close" id="closeProofModal">✕</button>
+    <div class="proof-modal-title">Authority Resolution Proof</div>
+    <img id="proofModalImg" class="proof-modal-img" src="" alt="Cleanup Proof Image">
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
 /* YOUR LIVE FIREBASE CONFIG */
@@ -314,6 +362,25 @@ const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'stri
 
 let db = null, collection, addDoc, onSnapshot;
 let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
+
+// Proof Modal Handlers
+const proofModal = document.getElementById('proofModal');
+const proofModalImg = document.getElementById('proofModalImg');
+document.getElementById('closeProofModal').addEventListener('click', () => {
+  proofModal.style.display = 'none';
+});
+proofModal.addEventListener('click', (e) => {
+  if (e.target === proofModal) proofModal.style.display = 'none';
+});
+
+window.viewProof = function(imgSrc) {
+  if (imgSrc && imgSrc !== 'null' && imgSrc !== 'undefined') {
+    proofModalImg.src = imgSrc;
+    proofModal.style.display = 'flex';
+  } else {
+    alert("No cleanup proof image was attached for this resolved issue.");
+  }
+};
 
 async function initFirebase(){
   if(!isConfigured){
@@ -351,7 +418,7 @@ async function persistReport(r){
 }
 
 // Map setup & Tile Layers
-const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru default
+const DEFAULT_CENTER = [12.9716, 77.5946];
 
 const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; OpenStreetMap &copy; CARTO',
@@ -363,7 +430,6 @@ const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/
   maxZoom: 18
 });
 
-// Initialize map with Satellite layer by default
 const map = L.map('map', { 
   zoomControl: true,
   layers: [satelliteLayer] 
@@ -399,16 +465,16 @@ locate();
 
 // WhatsApp Sharing
 document.getElementById('shareBtn').addEventListener('click', () => {
-  const text = encodeURIComponent("Log and track civic waste dump spots on TrashTagger:");
+  const text = encodeURIComponent("Log and track civic waste dump spots on TrashTagger by Amit Patil:");
   const url = encodeURIComponent(window.location.href);
   if (navigator.share) {
-    navigator.share({ title: 'TrashTagger', text: 'Community Waste Tracker', url: window.location.href });
+    navigator.share({ title: 'TrashTagger by Amit Patil', text: 'Community Waste Tracker', url: window.location.href });
   } else {
     window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, '_blank');
   }
 });
 
-// Location Search via Nominatim API
+// Location Search
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const searchResults = document.getElementById('searchResults');
@@ -547,21 +613,26 @@ function render(){
   const activeClusters = clusters.filter(c => !c.isResolved);
   const maxScore = activeClusters.length ? Math.max(...activeClusters.map(c=>c.score)) : 1;
 
-  // Render map markers for all clusters
+  // Render map markers
   clusters.forEach((c)=>{
     const radius = c.isResolved ? 8 : (8 + 12 * (c.score / maxScore));
-    const statusHeader = c.isResolved ? '<b style="color:#5a6558;">[CLEARED SPOT]</b><br>' : `<b>${c.activeCount} active / ${c.count} total report${c.count>1?'s':''}</b><br>`;
-    const scoreText = c.isResolved ? 'Cleaned by BBMP Authority' : `avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}`;
+    const proofImg = c.points.find(p => p.proofImage)?.proofImage || '';
+    
+    let popupContent = c.isResolved 
+      ? `<b style="color:#5a6558;">[CLEARED SPOT]</b><br>Cleaned by BBMP Authority`
+      : `<b>${c.activeCount} active / ${c.count} total report${c.count>1?'s':''}</b><br>avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}`;
+
+    if (c.isResolved && proofImg) {
+      popupContent += `<br><button onclick="window.viewProof('${proofImg}')" class="proof-btn" style="margin-top:8px;">📸 View Proof</button>`;
+    }
 
     L.circleMarker(c.centroid, {
       radius, color: tierColor[c.tier], fillColor: tierColor[c.tier],
       fillOpacity:0.45, weight:2
-    }).bindPopup(
-      `${statusHeader}${scoreText}`
-    ).addTo(clusterLayer);
+    }).bindPopup(popupContent).addTo(clusterLayer);
   });
 
-  // Limit ledger to Top 50 ranked spots
+  // Limit ledger to Top 50
   const top50 = clusters.slice(0, 50);
 
   const ledger = document.getElementById('ledger');
@@ -572,7 +643,11 @@ function render(){
   ledger.innerHTML = top50.map((c,i)=>{
     const pct = c.isResolved ? 0 : Math.min(100, (c.score/maxScore)*100);
     const recentNote = c.daysAgo < 1 ? 'today' : `${Math.floor(c.daysAgo)}d ago`;
-    const scoreLabel = c.isResolved ? '<span class="badge-resolved">CLEARED</span>' : `score ${c.score.toFixed(0)}`;
+    const proofImg = c.points.find(p => p.proofImage)?.proofImage || '';
+
+    const scoreLabel = c.isResolved 
+      ? `<span class="badge-resolved">CLEARED</span> ${proofImg ? `<button onclick="window.viewProof('${proofImg}')" class="proof-btn">Proof</button>` : ''}` 
+      : `score ${c.score.toFixed(0)}`;
 
     return `
       <div class="ledger-row tier-${c.tier}">
