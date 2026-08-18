@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrashTagger — BBMP Civic Authority Portal</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<title>TrashTagger — BBMP Sanitation Authority Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -19,200 +18,188 @@
     --paper:#ece7d9;
     --paper-dim:#a9a89c;
     --line:#3a4038;
-    --bbmp-blue:#2d72d9;
-    --wa-green:#25D366;
+    --resolved:#5a6558;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
   .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px;}
 
-  /* Password Verification Screen */
-  .auth-overlay{
-    position:fixed; top:0; left:0; width:100vw; height:100vh;
-    background:var(--ink); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;
-  }
-  .auth-box{
-    background:var(--card); border:1px solid var(--line); border-top:4px solid var(--bbmp-blue);
-    border-radius:4px; padding:32px 24px; max-width:400px; width:100%; text-align:center;
-    box-shadow:0 10px 30px rgba(0,0,0,0.5);
-  }
-  .auth-box h2{font-family:'Archivo Black',sans-serif; text-transform:uppercase; margin:0 0 6px; font-size:22px; letter-spacing:0.5px;}
-  .auth-box p{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); margin-bottom:22px; line-height:1.4;}
-  .auth-box input{
-    width:100%; padding:12px; background:var(--ink); border:1px solid var(--line);
-    color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px; border-radius:2px; margin-bottom:14px; text-align:center;
-    outline:none;
-  }
-  .auth-box input:focus{border-color:var(--bbmp-blue);}
-  .auth-box button{
-    width:100%; padding:12px; background:var(--bbmp-blue); color:#fff; border:none;
-    border-radius:2px; font-family:'Oswald',sans-serif; font-size:14px; font-weight:600;
-    letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:background 0.2s;
-  }
-  .auth-box button:hover{background:#3b82ed;}
-  .auth-err{color:var(--hazard); font-family:'IBM Plex Mono',monospace; font-size:11px; margin-top:12px; display:none;}
-
-  /* Main Dashboard */
-  #mainApp{display:none;}
+  /* Header */
   .masthead{
     display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:16px;
+    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:14px;
     flex-wrap:wrap; gap:8px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,5vw,32px);
+    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,4vw,32px);
     letter-spacing:0.5px; margin:0; text-transform:uppercase;
   }
-  .masthead h1 span{color:var(--bbmp-blue);}
+  .masthead h1 span{color:var(--amber);}
   .masthead .meta{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
     text-align:right; line-height:1.5;
   }
 
-  .nav-tabs{display:flex; gap:10px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:10px;}
-  .tab-btn{
-    background:var(--card); border:1px solid var(--line); color:var(--paper-dim);
-    padding:8px 16px; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:1px;
-    text-transform:uppercase; cursor:pointer; border-radius:2px; transition:all 0.2s;
+  /* Auth Overlay */
+  #authOverlay{
+    position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:var(--ink); z-index:9999; display:flex; align-items:center; justify-content:center;
+    padding:20px;
   }
-  .tab-btn.active{background:var(--bbmp-blue); color:#fff; border-color:var(--bbmp-blue);}
+  .auth-card{
+    background:var(--card); border:1px solid var(--line); border-radius:4px;
+    padding:28px 24px; max-width:400px; width:100%; text-align:center;
+  }
+  .auth-card h2{
+    font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1px; margin:0 0 8px; color:var(--paper);
+  }
+  .auth-card p{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-bottom:20px;}
+  .auth-card input{
+    width:100%; padding:10px 12px; background:var(--ink); border:1px solid var(--line);
+    color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px; border-radius:2px; margin-bottom:14px; text-align:center;
+  }
+  .auth-card button{
+    width:100%; padding:10px 0; background:var(--amber); color:var(--ink); border:none;
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; letter-spacing:1px;
+    text-transform:uppercase; cursor:pointer; border-radius:2px;
+  }
+  .auth-card button:hover{background:#d8aa4a;}
+  .auth-error{color:var(--hazard); font-family:'IBM Plex Mono',monospace; font-size:11px; margin-top:10px; display:none;}
 
-  #map{width:100%; height:380px; border:1px solid var(--line); border-radius:3px; margin-bottom:22px;}
+  /* Stats Bar */
+  .stats-row{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+  .stat-box{
+    flex:1; min-width:140px; background:var(--card); border:1px solid var(--line);
+    padding:12px 14px; border-radius:3px; font-family:'IBM Plex Mono',monospace;
+  }
+  .stat-num{font-family:'Archivo Black',sans-serif; font-size:24px; color:var(--paper); margin-top:4px;}
+  .stat-label{font-size:10px; color:var(--paper-dim); text-transform:uppercase; letter-spacing:0.5px;}
 
+  /* Section Titles */
   .panel-label{
-    font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:2px;
-    text-transform:uppercase; color:var(--paper); margin:0 0 14px;
-    border-left:3px solid var(--bbmp-blue); padding-left:8px;
+    font-family:'Oswald',sans-serif; font-size:14px; letter-spacing:2px;
+    text-transform:uppercase; color:var(--paper); margin:24px 0 14px;
+    border-left:3px solid var(--amber); padding-left:8px;
+    display:flex; justify-content:space-between; align-items:center;
   }
 
-  .cards-list{display:flex; flex-direction:column; gap:14px;}
-  .spot-card{
+  /* Issue Cards Grid */
+  .cards-grid{display:grid; grid-template-columns:1fr; gap:14px;}
+  @media(min-width:700px){ .cards-grid{grid-template-columns:1fr 1fr;} }
+
+  .issue-card{
     background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px;
+    display:flex; flex-direction:column; justify-content:space-between; position:relative;
   }
-  .spot-header{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
-  .spot-coords{font-family:'Oswald',sans-serif; font-size:15px; letter-spacing:0.5px; color:var(--paper);}
-  .spot-sev{font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 8px; border-radius:2px; font-weight:600;}
-  .sev-1{background:var(--wet); color:#000;}
-  .sev-2{background:var(--amber); color:#000;}
-  .sev-3{background:var(--hazard); color:#fff;}
+  .issue-card.tier-1{border-left:4px solid var(--hazard);}
+  .issue-card.tier-2{border-left:4px solid var(--amber);}
+  .issue-card.tier-3{border-left:4px solid var(--wet);}
+  .issue-card.tier-resolved{border-left:4px solid var(--resolved); opacity:0.85;}
 
-  .spot-meta{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-bottom:12px; line-height:1.6;}
-  .resolve-action-btn{
-    background:var(--bbmp-blue); color:#fff; border:none; border-radius:2px;
-    padding:9px 14px; font-family:'Oswald',sans-serif; font-size:12px; font-weight:600;
-    letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:background 0.2s;
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;}
+  .card-coords{
+    font-family:'Oswald',sans-serif; font-size:15px; letter-spacing:0.5px;
+    text-transform:uppercase; color:var(--paper); text-decoration:none;
   }
-  .resolve-action-btn:hover{background:#3b82ed;}
+  .card-coords:hover{text-decoration:underline; color:var(--amber);}
+  .sev-badge{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 6px; border-radius:2px;
+    font-weight:600; text-transform:uppercase; white-space:nowrap;
+  }
+  .sev-badge.high{background:var(--hazard); color:#fff;}
+  .sev-badge.med{background:var(--amber); color:var(--ink);}
+  .sev-badge.low{background:var(--wet); color:#fff;}
+  .sev-badge.resolved{background:var(--resolved); color:#fff;}
 
-  /* Resolution Modal */
-  .modal{
-    position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85);
-    z-index:10000; display:none; align-items:center; justify-content:center; padding:20px;
+  .card-notes{
+    font-family:'Inter',sans-serif; font-size:12.5px; color:var(--paper); margin:8px 0;
+    background:var(--ink); padding:8px 10px; border-radius:2px; border:1px solid var(--line);
+    min-height:38px;
   }
-  .modal-content{
-    background:var(--card); border:1px solid var(--line); border-radius:4px; max-width:480px; width:100%;
-    padding:22px; font-family:'Inter',sans-serif; box-shadow:0 10px 30px rgba(0,0,0,0.8);
-  }
-  .modal-title{font-family:'Oswald',sans-serif; font-size:18px; text-transform:uppercase; margin:0 0 14px; color:var(--paper); border-bottom:1px solid var(--line); padding-bottom:8px;}
-  .modal label{display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--paper-dim); margin:12px 0 4px;}
-  .modal input[type="file"]{
-    width:100%; background:var(--ink); border:1px solid var(--line); padding:8px;
-    color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; font-size:11px; border-radius:2px;
-  }
-  .modal textarea{
-    width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
-    padding:8px 10px; font-family:'Inter',sans-serif; font-size:12px; border-radius:2px; min-height:60px;
-    resize:vertical;
-  }
-  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:20px;}
-  .modal-btn{
-    padding:9px 16px; border:none; border-radius:2px; font-family:'Oswald',sans-serif;
-    font-size:12px; text-transform:uppercase; cursor:pointer;
-  }
-  .modal-btn.cancel{background:var(--line); color:var(--paper);}
-  .modal-btn.confirm{background:var(--wet); color:#0e130f; font-weight:600;}
+  .card-meta{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--paper-dim); margin-bottom:12px;}
 
-  /* Photo Grid for Resolved Cards */
-  .photo-comparison{
-    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;
+  /* Action Form inside Card */
+  .action-box{
+    margin-top:10px; padding-top:12px; border-top:1px dashed var(--line);
   }
-  .photo-box{
-    background:var(--ink); border:1px solid var(--line); border-radius:2px; padding:6px; text-align:center;
+  .action-box label{
+    display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--paper-dim);
+    text-transform:uppercase; margin-bottom:6px;
   }
-  .photo-box img{width:100%; height:120px; object-fit:cover; border-radius:2px; display:block;}
-  .photo-box label{font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--paper-dim); margin-top:5px; display:block; text-transform:uppercase;}
+  .file-input{
+    width:100%; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
+    margin-bottom:8px;
+  }
+  .resolve-btn{
+    width:100%; padding:9px 0; background:var(--wet); color:#0e130f; border:none;
+    font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:1px;
+    text-transform:uppercase; font-size:12px; cursor:pointer; border-radius:2px;
+  }
+  .resolve-btn:hover{background:#5c9270;}
+  .resolve-btn:disabled{opacity:0.5; cursor:not-allowed;}
 
-  .empty-msg{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); text-align:center; padding:30px 0;}
-
-  .leaflet-control-layers{
-    background: var(--card) !important; color: var(--paper) !important;
-    border: 1px solid var(--line) !important; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  /* Proof Image Preview */
+  .proof-img{
+    width:100%; max-height:160px; object-fit:cover; border-radius:2px; margin-top:8px;
+    border:1px solid var(--line);
   }
+
+  .empty-msg{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim);
+    padding:30px; text-align:center; background:var(--card); border:1px dashed var(--line); grid-column:1 / -1;
+  }
+
+  ::-webkit-scrollbar{width:7px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
 </style>
 </head>
 <body>
 
-<div class="auth-overlay" id="authOverlay">
-  <div class="auth-box">
-    <h2>BBMP Authority Portal</h2>
-    <p>TrashTagger Civic Sanitation Dashboard</p>
-    <input type="password" id="passInput" placeholder="Enter Portal Password">
-    <button id="loginBtn">Access Dashboard</button>
-    <div class="auth-err" id="authErr">Incorrect Password. Please try again.</div>
+<!-- Login Authentication Modal -->
+<div id="authOverlay">
+  <div class="auth-card">
+    <h2>Authority Portal</h2>
+    <p>BBMP Sanitation Control Room Access</p>
+    <input type="password" id="passwordInput" placeholder="Enter Portal Password">
+    <button id="loginBtn">Authenticate</button>
+    <div class="auth-error" id="authError">Invalid Password. Please try again.</div>
   </div>
 </div>
 
-<div class="wrap" id="mainApp">
+<div class="wrap">
   <div class="masthead">
-    <h1>TrashTagger <span>Authority</span></h1>
-    <div class="meta">BBMP SANITATION DASHBOARD<br>WARD RESOLUTION SYSTEM</div>
+    <h1>Trash<span>Tagger</span> Authority</h1>
+    <div class="meta">BBMP CIVIC DASHBOARD<br>CLEARED SPOT VERIFICATION</div>
   </div>
 
-  <div class="nav-tabs">
-    <button class="tab-btn active" id="tabActive">Active Black Spots (<span id="activeCount">0</span>)</button>
-    <button class="tab-btn" id="tabResolved">Resolved Archive (<span id="resolvedCount">0</span>)</button>
-  </div>
-
-  <div id="map"></div>
-
-  <div id="activeSection">
-    <p class="panel-label">Pending Action Items</p>
-    <div class="cards-list" id="activeList">
-      <div class="empty-msg">No active reports logged.</div>
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-label">Total Reports</div>
+      <div class="stat-num" id="statTotal">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Pending Action</div>
+      <div class="stat-num" id="statActive" style="color:var(--hazard);">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Resolved / Cleared</div>
+      <div class="stat-num" id="statResolved" style="color:var(--wet);">0</div>
     </div>
   </div>
 
-  <div id="resolvedSection" style="display:none;">
-    <p class="panel-label">Completed Sanitation Operations</p>
-    <div class="cards-list" id="resolvedList">
-      <div class="empty-msg">No resolved spots archived yet.</div>
-    </div>
+  <p class="panel-label">Active Black Spots requiring action</p>
+  <div class="cards-grid" id="activeGrid">
+    <div class="empty-msg">Loading active reports...</div>
+  </div>
+
+  <p class="panel-label" style="border-color:var(--resolved);">Resolved & Cleared Archives</p>
+  <div class="cards-grid" id="resolvedGrid">
+    <div class="empty-msg">No resolved spots yet.</div>
   </div>
 </div>
 
-<div class="modal" id="resolveModal">
-  <div class="modal-content">
-    <div class="modal-title">Mark Issue as Resolved</div>
-    <form id="resolveForm">
-      <label>Before Clearance Photo</label>
-      <input type="file" id="beforePhotoInput" accept="image/*" required>
-
-      <label>After Clearance Photo</label>
-      <input type="file" id="afterPhotoInput" accept="image/*" required>
-
-      <label>Resolution Action Note</label>
-      <textarea id="resolutionNoteInput" placeholder="e.g. Cleared waste dump via Ward 142 sanitation team"></textarea>
-
-      <div class="modal-actions">
-        <button type="button" class="modal-btn cancel" id="cancelModalBtn">Cancel</button>
-        <button type="submit" class="modal-btn confirm">Confirm Resolution</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
+/* YOUR LIVE FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyCQiMeEqEny83vT8tFDTyHIIhw-6GSWxa0",
   authDomain: "blackspot-ledger.firebaseapp.com",
@@ -223,192 +210,197 @@ const firebaseConfig = {
   measurementId: "G-MQ0WBXET6E"
 };
 
-const PASSWORD = "123";
+/* --- AUTHORITY PASSWORD SETTING --- */
+const PASSWORD = "trashtagger@123";
+
+const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
+let db = null, collection, onSnapshot, doc, updateDoc;
 let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
-let db = null, doc, updateDoc, collection, onSnapshot;
-let selectedReportId = null;
 
-document.getElementById('loginBtn').addEventListener('click', authenticate);
-document.getElementById('passInput').addEventListener('keydown', e => { if(e.key==='Enter') authenticate(); });
+// Auth handler
+const authOverlay = document.getElementById('authOverlay');
+const passwordInput = document.getElementById('passwordInput');
+const loginBtn = document.getElementById('loginBtn');
+const authError = document.getElementById('authError');
 
-function authenticate(){
-  const input = document.getElementById('passInput').value;
-  if(input === PASSWORD){
-    document.getElementById('authOverlay').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    initMap();
-    initFirebase();
-  } else {
-    document.getElementById('authErr').style.display = 'block';
+function checkAuth(){
+  if(sessionStorage.getItem('tt_auth_granted') === 'true'){
+    authOverlay.style.display = 'none';
   }
 }
+checkAuth();
+
+loginBtn.addEventListener('click', ()=>{
+  if(passwordInput.value === PASSWORD){
+    sessionStorage.setItem('tt_auth_granted', 'true');
+    authOverlay.style.display = 'none';
+  } else {
+    authError.style.display = 'block';
+  }
+});
+passwordInput.addEventListener('keydown', e=>{ if(e.key==='Enter') loginBtn.click(); });
+
+// Image Compression Helper
+function compressImage(file, maxWidth = 600, quality = 0.6) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+}
+
+// Globally bound Resolution function
+window.confirmResolution = async function(identifier, btnElement) {
+  const fileInput = document.getElementById(`file-${identifier}`);
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+    alert("Please select a clean-up proof image first.");
+    return;
+  }
+
+  btnElement.disabled = true;
+  btnElement.textContent = "Compressing & Saving...";
+
+  try {
+    const compressedImage = await compressImage(fileInput.files[0]);
+
+    if (isConfigured && db) {
+      const docRef = doc(db, "reports", identifier);
+      await updateDoc(docRef, {
+        status: "resolved",
+        proofImage: compressedImage,
+        resolvedAt: Date.now()
+      });
+    } else {
+      const targetIndex = reports.findIndex(r => r.docId === identifier || r.ts.toString() === identifier);
+      if (targetIndex !== -1) {
+        reports[targetIndex].status = "resolved";
+        reports[targetIndex].proofImage = compressedImage;
+        reports[targetIndex].resolvedAt = Date.now();
+        localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
+      }
+    }
+
+    alert("Spot marked as RESOLVED and proof logged!");
+    render();
+  } catch (err) {
+    console.error("Resolution update failed:", err);
+    alert("Error updating status: " + err.message);
+  } finally {
+    btnElement.disabled = false;
+    btnElement.textContent = "Confirm Resolution";
+  }
+};
 
 async function initFirebase(){
+  if(!isConfigured){
+    render();
+    return;
+  }
   try {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
     const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
-    collection = fs.collection; updateDoc = fs.updateDoc; doc = fs.doc; onSnapshot = fs.onSnapshot;
+    collection = fs.collection; onSnapshot = fs.onSnapshot; doc = fs.doc; updateDoc = fs.updateDoc;
     const app = initializeApp(firebaseConfig);
     db = fs.getFirestore(app);
-    onSnapshot(collection(db, "reports"), (snapshot) => {
+    const reportsCol = collection(db, "reports");
+    
+    onSnapshot(reportsCol, (snapshot) => {
       reports = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
       localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
       render();
     });
   } catch(e) {
+    console.warn("Firebase authority fallback:", e);
     render();
   }
 }
 
-let map, markersGroup;
-function initMap(){
-  const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri Satellite', maxZoom: 18
-  });
-  const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
-
-  map = L.map('map', { layers: [satelliteLayer] }).setView([12.9716, 77.5946], 13);
-  L.control.layers({ "Satellite": satelliteLayer, "Dark Mode": darkLayer }).addTo(map);
-  markersGroup = L.layerGroup().addTo(map);
-}
-
-let currentTab = 'active';
-document.getElementById('tabActive').addEventListener('click', ()=>{
-  currentTab = 'active';
-  document.getElementById('tabActive').classList.add('active');
-  document.getElementById('tabResolved').classList.remove('active');
-  document.getElementById('activeSection').style.display = 'block';
-  document.getElementById('resolvedSection').style.display = 'none';
-  render();
-});
-document.getElementById('tabResolved').addEventListener('click', ()=>{
-  currentTab = 'resolved';
-  document.getElementById('tabResolved').classList.add('active');
-  document.getElementById('tabActive').classList.remove('active');
-  document.getElementById('resolvedSection').style.display = 'block';
-  document.getElementById('activeSection').style.display = 'none';
-  render();
-});
-
 function render(){
-  if(!map) return;
-  markersGroup.clearLayers();
-
   const activeReports = reports.filter(r => r.status !== 'resolved');
   const resolvedReports = reports.filter(r => r.status === 'resolved');
 
-  document.getElementById('activeCount').textContent = activeReports.length;
-  document.getElementById('resolvedCount').textContent = resolvedReports.length;
+  document.getElementById('statTotal').textContent = reports.length;
+  document.getElementById('statActive').textContent = activeReports.length;
+  document.getElementById('statResolved').textContent = resolvedReports.length;
 
-  const displayReports = currentTab === 'active' ? activeReports : resolvedReports;
-
-  displayReports.forEach(r => {
-    const color = r.status === 'resolved' ? '#25D366' : (r.sev === 3 ? '#c1512f' : r.sev === 2 ? '#c99a3e' : '#4e7d5c');
-    L.circleMarker([r.lat, r.lng], {
-      radius: 8, color: color, fillColor: color, fillOpacity: 0.7, weight: 2
-    }).bindPopup(`<b>${r.status === 'resolved' ? 'RESOLVED' : 'ACTIVE DUMP'}</b><br>Note: ${r.note || 'None'}`).addTo(markersGroup);
-  });
-
-  const activeList = document.getElementById('activeList');
-  const resolvedList = document.getElementById('resolvedList');
-
+  const activeGrid = document.getElementById('activeGrid');
   if(activeReports.length === 0){
-    activeList.innerHTML = '<div class="empty-msg">No pending active black spots!</div>';
+    activeGrid.innerHTML = '<div class="empty-msg">No active black spots currently logged. All clean!</div>';
   } else {
-    activeList.innerHTML = activeReports.map((r, index) => `
-      <div class="spot-card">
-        <div class="spot-header">
-          <div class="spot-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
-          <span class="spot-sev sev-${r.sev}">SEVERITY ${r.sev}</span>
+    activeGrid.innerHTML = activeReports.map(r => {
+      const key = r.docId || r.ts;
+      const mapUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
+      const dateStr = new Date(r.ts).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' });
+      const sevLabel = r.sev === 3 ? 'HIGH' : (r.sev === 2 ? 'MED' : 'LOW');
+      const sevClass = r.sev === 3 ? 'high' : (r.sev === 2 ? 'med' : 'low');
+
+      return `
+        <div class="issue-card tier-${r.sev}">
+          <div>
+            <div class="card-top">
+              <a href="${mapUrl}" target="_blank" class="card-coords">${r.lat.toFixed(4)}, ${r.lng.toFixed(4)} ↗</a>
+              <span class="sev-badge ${sevClass}">${sevLabel} SEVERITY</span>
+            </div>
+            <div class="card-meta">Reported: ${dateStr}</div>
+            <div class="card-notes">${r.note || 'No notes attached.'}</div>
+          </div>
+          <div class="action-box">
+            <label>Upload Resolution Proof Photo</label>
+            <input type="file" class="file-input" id="file-${key}" accept="image/*">
+            <button class="resolve-btn" onclick="window.confirmResolution('${key}', this)">Confirm Resolution</button>
+          </div>
         </div>
-        <div class="spot-meta">
-          Logged: ${new Date(r.ts).toLocaleString()}<br>
-          Note: "${r.note || 'No description provided'}"
-        </div>
-        <button class="resolve-action-btn" onclick="openResolveModal('${r.docId || index}')">Mark as Resolved & Upload Proof</button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
+  const resolvedGrid = document.getElementById('resolvedGrid');
   if(resolvedReports.length === 0){
-    resolvedList.innerHTML = '<div class="empty-msg">No resolved items in archive.</div>';
+    resolvedGrid.innerHTML = '<div class="empty-msg">No resolved spots in history.</div>';
   } else {
-    resolvedList.innerHTML = resolvedReports.map(r => `
-      <div class="spot-card">
-        <div class="spot-header">
-          <div class="spot-coords">${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}</div>
-          <span class="spot-sev" style="background:#25D366; color:#000;">RESOLVED</span>
-        </div>
-        <div class="spot-meta">
-          Resolved: ${new Date(r.resolvedAt).toLocaleString()}<br>
-          Action Note: "${r.resolutionNote || 'Cleared area'}"
-        </div>
-        <div class="photo-comparison">
-          <div class="photo-box">
-            <img src="${r.beforePhoto}" alt="Before Clearance">
-            <label>Before Clearance</label>
+    resolvedGrid.innerHTML = resolvedReports.map(r => {
+      const mapUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
+      const resolvedDate = r.resolvedAt ? new Date(r.resolvedAt).toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' }) : 'Recently';
+
+      return `
+        <div class="issue-card tier-resolved">
+          <div>
+            <div class="card-top">
+              <a href="${mapUrl}" target="_blank" class="card-coords">${r.lat.toFixed(4)}, ${r.lng.toFixed(4)} ↗</a>
+              <span class="sev-badge resolved">CLEARED</span>
+            </div>
+            <div class="card-meta">Resolved on: ${resolvedDate}</div>
+            <div class="card-notes">${r.note || 'No original notes.'}</div>
           </div>
-          <div class="photo-box">
-            <img src="${r.afterPhoto}" alt="After Clearance">
-            <label>After Clearance</label>
-          </div>
+          ${r.proofImage ? `<img src="${r.proofImage}" class="proof-img" alt="Resolution Proof">` : ''}
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 }
 
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(file);
-  });
-}
-
-const modal = document.getElementById('resolveModal');
-window.openResolveModal = function(id){
-  selectedReportId = id;
-  modal.style.display = 'flex';
-};
-
-document.getElementById('cancelModalBtn').addEventListener('click', ()=>{ modal.style.display = 'none'; });
-
-document.getElementById('resolveForm').addEventListener('submit', async function(e){
-  e.preventDefault();
-  const beforeFile = document.getElementById('beforePhotoInput').files[0];
-  const afterFile = document.getElementById('afterPhotoInput').files[0];
-  const note = document.getElementById('resolutionNoteInput').value.trim();
-
-  if(!beforeFile || !afterFile) return;
-
-  const beforeBase64 = await fileToBase64(beforeFile);
-  const afterBase64 = await fileToBase64(afterFile);
-
-  const resolutionData = {
-    status: 'resolved',
-    resolvedAt: Date.now(),
-    beforePhoto: beforeBase64,
-    afterPhoto: afterBase64,
-    resolutionNote: note
-  };
-
-  if(db && typeof selectedReportId === 'string' && selectedReportId.length > 10){
-    const reportRef = doc(db, "reports", selectedReportId);
-    await updateDoc(reportRef, resolutionData);
-  } else {
-    const idx = parseInt(selectedReportId, 10);
-    if(!isNaN(idx) && reports[idx]){
-      reports[idx] = { ...reports[idx], ...resolutionData };
-      localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
-    }
-  }
-
-  modal.style.display = 'none';
-  document.getElementById('resolveForm').reset();
-  render();
-});
+await initFirebase();
 </script>
 </body>
 </html>
