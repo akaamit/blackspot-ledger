@@ -29,6 +29,43 @@
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
   .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px;}
 
+  /* Password Lock Overlay */
+  .auth-overlay{
+    position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:var(--ink); z-index:10000; display:flex;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .auth-box{
+    background:var(--card); border:1px solid var(--line); border-radius:4px;
+    padding:32px 24px; max-width:380px; width:100%; text-align:center;
+  }
+  .auth-box h2{
+    font-family:'Oswald',sans-serif; font-size:22px; margin:0 0 8px;
+    letter-spacing:1px; text-transform:uppercase; color:var(--paper);
+  }
+  .auth-box p{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim);
+    margin:0 0 20px;
+  }
+  .auth-box input[type="password"]{
+    width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
+    padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:13px;
+    border-radius:2px; margin-bottom:14px; text-align:center;
+  }
+  .auth-box input[type="password"]:focus{
+    outline:1px solid var(--amber);
+  }
+  .auth-box button{
+    width:100%; padding:12px 0; background:var(--hazard); color:#fff; border:none;
+    border-radius:2px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:14px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+  }
+  .auth-box button:hover{background:#a34224;}
+  .auth-error{
+    color:#ff6b6b; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    margin-top:12px; display:none;
+  }
+
   .masthead{
     display:flex; align-items:center; justify-content:space-between;
     border-bottom:3px solid var(--paper); padding-bottom:12px; margin-bottom:20px;
@@ -45,6 +82,13 @@
   .masthead .meta{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
   }
+
+  .logout-btn{
+    background:var(--card-2); color:var(--paper-dim); border:1px solid var(--line);
+    padding:6px 12px; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    cursor:pointer; border-radius:2px;
+  }
+  .logout-btn:hover{color:var(--paper); border-color:var(--paper-dim);}
 
   /* Embedded Satellite Map */
   #map{
@@ -167,6 +211,20 @@
 </style>
 </head>
 <body>
+
+<!-- Password Authentication Overlay -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>Authority Login</h2>
+    <p>Enter Master Password to Access Portal</p>
+    <form id="authForm">
+      <input type="password" id="authPassword" placeholder="Enter Password" required autofocus />
+      <button type="submit">Unlock Control Panel</button>
+    </form>
+    <div id="authError" class="auth-error">Incorrect password. Access denied.</div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <div class="masthead">
@@ -174,6 +232,7 @@
       <h1>TrashTagger <span class="badge">AUTHORITY PORTAL</span></h1>
       <div class="meta">BBMP SANITATION ACTION & DISPATCH CONTROL</div>
     </div>
+    <button class="logout-btn" id="logoutBtn">🔒 Lock Portal</button>
   </div>
 
   <!-- Interactive Satellite Overview Map -->
@@ -190,7 +249,7 @@
 
 </div>
 
-<!-- Resolve Action Modal (Before & After Image Uploads + Action Comments) -->
+<!-- Resolve Action Modal -->
 <div class="modal-overlay" id="resolveModal">
   <div class="modal-box">
     <button class="modal-close" id="closeModal">✕</button>
@@ -227,6 +286,35 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
+// Password Gate Logic
+const authOverlay = document.getElementById('authOverlay');
+const authForm = document.getElementById('authForm');
+const authPassword = document.getElementById('authPassword');
+const authError = document.getElementById('authError');
+const logoutBtn = document.getElementById('logoutBtn');
+
+if (sessionStorage.getItem('tt_authority_authed') === 'true') {
+  authOverlay.style.display = 'none';
+}
+
+authForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (authPassword.value === 'trashtagger@123') {
+    sessionStorage.setItem('tt_authority_authed', 'true');
+    authOverlay.style.display = 'none';
+    authError.style.display = 'none';
+    authPassword.value = '';
+  } else {
+    authError.style.display = 'block';
+    authPassword.value = '';
+  }
+});
+
+logoutBtn.addEventListener('click', () => {
+  sessionStorage.removeItem('tt_authority_authed');
+  authOverlay.style.display = 'flex';
+});
+
 const firebaseConfig = {
   apiKey: "AIzaSyCQiMeEqEny83vT8tFDTyHIIhw-6GSWxa0",
   authDomain: "blackspot-ledger.firebaseapp.com",
@@ -239,7 +327,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Helper function to categorize severity into LOW (Green), MEDIUM (Yellow), HIGH (Red)
+// Severity badge formatting
 function getSevDetails(sev) {
   const s = String(sev).toLowerCase();
   if (s === '1' || s === 'low') {
@@ -384,7 +472,7 @@ onSnapshot(collection(db, "reports"), (snapshot) => {
     bounds.push([r.lat, r.lng]);
     const sev = getSevDetails(r.sev);
 
-    // Add marker to Satellite map with dynamic severity color
+    // Marker on satellite map
     const marker = L.circleMarker([r.lat, r.lng], {
       radius: 9,
       color: sev.color,
@@ -398,7 +486,6 @@ onSnapshot(collection(db, "reports"), (snapshot) => {
     `);
     markersLayer.addLayer(marker);
 
-    // Clickable Google Maps Satellite URL
     const gmapsSatelliteUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}&t=k`;
 
     return `
