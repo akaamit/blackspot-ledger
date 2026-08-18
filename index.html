@@ -338,14 +338,15 @@ const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/
   maxZoom: 18
 });
 
+// Initialize map with Satellite layer by default
 const map = L.map('map', { 
   zoomControl: true,
-  layers: [darkLayer] 
+  layers: [satelliteLayer] 
 }).setView(DEFAULT_CENTER, 14);
 
 const baseMaps = {
-  "Dark Mode": darkLayer,
-  "Satellite": satelliteLayer
+  "Satellite": satelliteLayer,
+  "Dark Mode": darkLayer
 };
 L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
