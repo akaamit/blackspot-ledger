@@ -264,14 +264,15 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
-/* REPLACE THESE VALUES WITH YOUR FIREBASE CONFIG FROM STEP 1 */
+/* YOUR LIVE FIREBASE CONFIG */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCQiMeEqEny83vT8tFDTyHIIhw-6GSWxa0",
+  authDomain: "blackspot-ledger.firebaseapp.com",
+  projectId: "blackspot-ledger",
+  storageBucket: "blackspot-ledger.firebasestorage.app",
+  messagingSenderId: "858874785569",
+  appId: "1:858874785569:web:3b73d8981bc22bc0c1d860",
+  measurementId: "G-MQ0WBXET6E"
 };
 
 const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
