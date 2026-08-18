@@ -183,7 +183,6 @@
   .ledger-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
   .ledger-title{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;}
   .ledger-score{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap;}
-  .ledger-actions{display:flex; align-items:center; gap:8px; margin-top:6px;}
   .bar-track{height:5px; background:var(--ink); border-radius:3px; margin-top:7px; overflow:hidden;}
   .bar-fill{height:100%; border-radius:3px;}
   .tier-1 .bar-fill{background:var(--hazard);}
@@ -195,12 +194,6 @@
     background:var(--resolved); color:var(--paper); font-family:'IBM Plex Mono',monospace;
     font-size:10px; padding:2px 6px; border-radius:2px; font-weight:600; text-transform:uppercase;
   }
-  .resolve-action-btn{
-    background:none; border:1px solid var(--line); color:var(--paper-dim);
-    font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px;
-    border-radius:2px; cursor:pointer; transition:all 0.2s; margin-top:6px;
-  }
-  .resolve-action-btn:hover{border-color:var(--paper); color:var(--paper);}
 
   .algo-note{
     margin-top:26px; padding:14px 16px; border:1px dashed var(--line); border-radius:3px;
@@ -253,7 +246,7 @@
     <div class="pill"><span class="dot wet"></span> LOW &nbsp;·&nbsp; occasional litter</div>
     <div class="pill"><span class="dot dry"></span> MED &nbsp;·&nbsp; recurring dump</div>
     <div class="pill"><span class="dot hazard"></span> HIGH &nbsp;·&nbsp; open/burning waste</div>
-    <div class="pill"><span class="dot resolved"></span> CLEARED &nbsp;·&nbsp; resolved spot</div>
+    <div class="pill"><span class="dot resolved"></span> CLEARED &nbsp;·&nbsp; resolved by authority</div>
   </div>
 
   <div class="search-row">
@@ -291,7 +284,7 @@
     </div>
 
     <div>
-      <p class="panel-label">Ranked black spots</p>
+      <p class="panel-label">Top 50 Ranked Black Spots</p>
       <div class="ledger" id="ledger">
         <div class="ledger-empty">No reports yet. Log the first one to start the ledger.</div>
       </div>
@@ -299,7 +292,7 @@
   </div>
 
   <div class="algo-note">
-    <b>How ranking works —</b> Reports within 40m are merged into clusters. Each cluster receives a <b>Black Spot Score</b> = (report count × 10) + (average severity × 8) + recency bonus (fades over 30 days). Resolved spots display as cleared until new reports are logged.
+    <b>How ranking works —</b> Reports within 40m are merged into clusters. Each cluster receives a <b>Black Spot Score</b> = (report count × 10) + (average severity × 8) + recency bonus (fades over 30 days). Resolved spots are cleared directly by BBMP sanitation authorities.
   </div>
 
 </div>
@@ -319,7 +312,7 @@ const firebaseConfig = {
 
 const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
 
-let db = null, collection, addDoc, onSnapshot, doc, updateDoc;
+let db = null, collection, addDoc, onSnapshot;
 let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
 
 async function initFirebase(){
@@ -331,7 +324,7 @@ async function initFirebase(){
   try {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
     const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
-    collection = fs.collection; addDoc = fs.addDoc; onSnapshot = fs.onSnapshot; doc = fs.doc; updateDoc = fs.updateDoc;
+    collection = fs.collection; addDoc = fs.addDoc; onSnapshot = fs.onSnapshot;
     const app = initializeApp(firebaseConfig);
     db = fs.getFirestore(app);
     const reportsCol = collection(db, "reports");
@@ -356,29 +349,6 @@ async function persistReport(r){
     await addDoc(reportsCol, r);
   }
 }
-
-// Global function to toggle spot resolution
-window.toggleClusterStatus = async function(clusterIndex){
-  const targetCluster = window.currentClusters && window.currentClusters[clusterIndex];
-  if(!targetCluster) return;
-
-  const newStatus = targetCluster.isResolved ? 'active' : 'resolved';
-
-  for(const p of targetCluster.points){
-    p.status = newStatus;
-    if(isConfigured && db && p.docId){
-      try {
-        const docRef = doc(db, "reports", p.docId);
-        await updateDoc(docRef, { status: newStatus });
-      } catch(err) {
-        console.error("Error updating resolution status in Firebase:", err);
-      }
-    }
-  }
-
-  localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
-  render();
-};
 
 // Map setup & Tile Layers
 const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru default
@@ -572,36 +542,37 @@ function render(){
     return {...c, ...s, tier: tierOf(s.score, s.isResolved)};
   }).sort((a,b)=>b.score-a.score);
 
-  window.currentClusters = clusters;
-
   clusterLayer.clearLayers();
   const tierColor = {1:'#c1512f', 2:'#c99a3e', 3:'#4e7d5c', 'resolved':'#5a6558'};
-  const maxScore = clusters.filter(c => !c.isResolved).length ? Math.max(...clusters.filter(c => !c.isResolved).map(c=>c.score)) : 1;
+  const activeClusters = clusters.filter(c => !c.isResolved);
+  const maxScore = activeClusters.length ? Math.max(...activeClusters.map(c=>c.score)) : 1;
 
-  clusters.forEach((c, i)=>{
+  // Render map markers for all clusters
+  clusters.forEach((c)=>{
     const radius = c.isResolved ? 8 : (8 + 12 * (c.score / maxScore));
-    const statusText = c.isResolved ? 'Mark as Active' : 'Mark as Resolved';
     const statusHeader = c.isResolved ? '<b style="color:#5a6558;">[CLEARED SPOT]</b><br>' : `<b>${c.activeCount} active / ${c.count} total report${c.count>1?'s':''}</b><br>`;
-    const scoreText = c.isResolved ? '' : `avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}<br>`;
+    const scoreText = c.isResolved ? 'Cleaned by BBMP Authority' : `avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}`;
 
     L.circleMarker(c.centroid, {
       radius, color: tierColor[c.tier], fillColor: tierColor[c.tier],
       fillOpacity:0.45, weight:2
     }).bindPopup(
-      `${statusHeader}${scoreText}<button class="resolve-action-btn" onclick="window.toggleClusterStatus(${i})">${statusText}</button>`
+      `${statusHeader}${scoreText}`
     ).addTo(clusterLayer);
   });
 
+  // Limit ledger to Top 50 ranked spots
+  const top50 = clusters.slice(0, 50);
+
   const ledger = document.getElementById('ledger');
-  if(clusters.length === 0){
+  if(top50.length === 0){
     ledger.innerHTML = '<div class="ledger-empty">No reports yet. Log the first one to start the ledger.</div>';
     return;
   }
-  ledger.innerHTML = clusters.map((c,i)=>{
+  ledger.innerHTML = top50.map((c,i)=>{
     const pct = c.isResolved ? 0 : Math.min(100, (c.score/maxScore)*100);
     const recentNote = c.daysAgo < 1 ? 'today' : `${Math.floor(c.daysAgo)}d ago`;
     const scoreLabel = c.isResolved ? '<span class="badge-resolved">CLEARED</span>' : `score ${c.score.toFixed(0)}`;
-    const actionText = c.isResolved ? 'Re-open Spot' : 'Mark Resolved';
 
     return `
       <div class="ledger-row tier-${c.tier}">
@@ -611,10 +582,7 @@ function render(){
             <div class="ledger-title">${c.centroid.lat.toFixed(4)}, ${c.centroid.lng.toFixed(4)}</div>
             <div class="ledger-score">${scoreLabel}</div>
           </div>
-          <div class="ledger-meta">${c.count} report${c.count>1?'s':''} · ${c.isResolved ? 'spot cleared' : `avg sev ${c.avgSev.toFixed(1)} · last seen ${recentNote}`}</div>
-          <div class="ledger-actions">
-            <button class="resolve-action-btn" onclick="window.toggleClusterStatus(${i})">${actionText}</button>
-          </div>
+          <div class="ledger-meta">${c.count} report${c.count>1?'s':''} · ${c.isResolved ? 'cleared by authority' : `avg sev ${c.avgSev.toFixed(1)} · last seen ${recentNote}`}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
         </div>
       </div>`;
