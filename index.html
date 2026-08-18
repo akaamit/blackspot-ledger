@@ -3,182 +3,742 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrashTagger — Report a Black Spot</title>
+<title>TrashTagger by Amit Patil — Community Waste Tracker</title>
+
+<!-- Open Graph Meta Tags for WhatsApp Link Preview -->
+<meta property="og:title" content="TrashTagger by Amit Patil — Community Waste Tracker">
+<meta property="og:description" content="Tag and track illegal waste dump sites in real time. Help map black spots and keep our streets clean.">
+<meta property="og:type" content="website">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
 <style>
   :root{
     --ink:#171b19;
     --card:#20251f;
     --card-2:#262c25;
     --wet:#4e7d5c;
+    --dry:#4a7a93;
     --hazard:#c1512f;
     --amber:#c99a3e;
     --paper:#ece7d9;
     --paper-dim:#a9a89c;
     --line:#3a4038;
+    --wa-green:#25D366;
+    --resolved:#5a6558;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;}
-  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px;}
 
   .masthead{
-    border-bottom:3px solid var(--paper); padding-bottom:12px; margin-bottom:20px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:3px solid var(--paper); padding-bottom:10px; margin-bottom:14px;
+    flex-wrap:wrap; gap:8px;
   }
   .masthead h1{
-    font-family:'Archivo Black',sans-serif; font-size:24px; margin:0; text-transform:uppercase;
+    font-family:'Archivo Black',sans-serif; font-size:clamp(22px,4.5vw,34px);
+    letter-spacing:0.5px; margin:0; text-transform:uppercase;
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:8px;
+  }
+  .masthead h1 span.brand{color:var(--hazard);}
+  .masthead h1 span.author-credit{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:400;
+    color:var(--paper-dim); text-transform:none; letter-spacing:0;
   }
   .masthead .meta{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
+    text-align:right; line-height:1.5;
+  }
+
+  .intro-card{
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--wa-green);
+    border-radius:3px; padding:14px 16px; margin-bottom:18px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+  }
+  .intro-text{
+    flex:1; min-width:260px; font-family:'Inter',sans-serif; font-size:13px; line-height:1.55; color:var(--paper);
+  }
+  .intro-text b{color:#fff;}
+  .intro-sub{
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-top:4px;
   }
 
+  .share-btn{
+    background:var(--wa-green); color:#0a2010; border:none; border-radius:3px;
+    padding:10px 16px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    box-shadow: 0 2px 6px rgba(37,211,102,0.2);
+    transition: background 0.2s;
+  }
+  .share-btn:hover{background:#20bd5a;}
+
+  .setup-banner{
+    display:none; background:#3a2a1c; border:1px solid var(--amber); border-radius:3px;
+    padding:11px 14px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;
+    color:var(--amber); margin-bottom:16px; line-height:1.6;
+  }
+  .setup-banner b{color:var(--paper);}
+
+  .status-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:5px 10px;
+    border:1px solid var(--line); border-radius:2px; color:var(--paper-dim);
+    display:flex; align-items:center; gap:6px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot.wet{background:var(--wet);}
+  .dot.dry{background:var(--dry);}
+  .dot.hazard{background:var(--hazard);}
+  .dot.resolved{background:var(--resolved);}
+
+  .search-row{ display:flex; gap:8px; margin-bottom:10px; position:relative; }
+  .search-row input{
+    flex:1; background:var(--card); border:1px solid var(--line); color:var(--paper);
+    padding:10px 12px; font-family:'Inter',sans-serif; font-size:13px; border-radius:2px;
+  }
+  .search-row button{
+    background:var(--dry); color:#0e1519; border:none; border-radius:2px;
+    padding:0 16px; font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:1px;
+    text-transform:uppercase; font-size:12px; cursor:pointer;
+  }
+  .search-row button:hover{background:#5a90ab;}
+  .search-results{
+    position:absolute; top:44px; left:0; right:0; background:var(--card-2);
+    border:1px solid var(--line); border-radius:3px; z-index:1000; max-height:220px; overflow-y:auto;
+    display:none;
+  }
+  .search-results div{
+    padding:9px 12px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;
+    border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .search-results div:last-child{border-bottom:none;}
+  .search-results div:hover{background:var(--ink);}
+
   #map{
-    width:100%; height:380px; border:1px solid var(--line); border-radius:4px; margin-bottom:24px;
+    width:100%; height:420px; border:1px solid var(--line); border-radius:3px;
+  }
+  .map-note{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
+    margin:8px 0 26px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;
+  }
+  .map-note button{
+    background:none; border:1px solid var(--line); color:var(--paper);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 9px;
+    border-radius:2px; cursor:pointer;
+  }
+  .map-note button:hover{border-color:var(--paper);}
+
+  .grid{display:grid; grid-template-columns:1fr; gap:26px;}
+  @media(min-width:760px){ .grid{grid-template-columns: 1.1fr 1fr;} }
+
+  .panel-label{
+    font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:2px;
+    text-transform:uppercase; color:var(--paper); margin:0 0 12px;
+    border-left:3px solid var(--hazard); padding-left:8px;
   }
 
-  .panel-title{
-    font-family:'Oswald',sans-serif; font-size:16px; letter-spacing:1.5px;
-    text-transform:uppercase; margin-bottom:14px; border-left:3px solid var(--wet); padding-left:8px;
-  }
-
-  .form-card{
-    background:var(--card); border:1px solid var(--line); border-radius:4px; padding:16px;
-  }
-
-  .field-group{margin-bottom:14px;}
-  .field-group label{
-    display:block; font-family:'IBM Plex Mono',monospace; font-size:11px;
-    text-transform:uppercase; color:var(--paper-dim); margin-bottom:6px; letter-spacing:0.5px;
-  }
-
-  .coords-text{
-    font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--amber); padding:8px 0;
-  }
-
-  select, textarea{
+  form{background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px;}
+  form label{display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--paper-dim); text-transform:uppercase; margin:12px 0 5px;}
+  form label:first-of-type{margin-top:0;}
+  textarea{
     width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
-    padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-radius:2px;
+    padding:9px 10px; font-family:'Inter',sans-serif; font-size:13px; border-radius:2px;
+    resize:vertical; min-height:54px;
   }
-  textarea{ font-family:'Inter',sans-serif; font-size:13px; resize:vertical; min-height:70px; }
-
+  .sev-row{display:flex; gap:8px;}
+  .sev-btn{
+    flex:1; padding:9px 0; text-align:center; border:1px solid var(--line);
+    border-radius:2px; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:12px;
+    background:var(--ink); color:var(--paper-dim);
+  }
+  .sev-btn.active[data-sev="1"]{background:var(--amber); color:var(--ink); border-color:var(--amber);}
+  .sev-btn.active[data-sev="2"]{background:var(--hazard); color:var(--paper); border-color:var(--hazard);}
+  .sev-btn.active[data-sev="3"]{background:#8f2a15; color:var(--paper); border-color:#8f2a15;}
+  .coord-line{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim);
+    margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+  }
   .submit-btn{
-    width:100%; padding:12px 0; background:var(--wet); color:#0a1a0e; border:none;
-    border-radius:2px; font-family:'Oswald',sans-serif; font-weight:600;
-    font-size:14px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; margin-top:10px;
+    width:100%; margin-top:16px; padding:11px 0; background:var(--wet); color:#0e130f;
+    border:none; border-radius:2px; font-family:'Oswald',sans-serif; font-weight:600;
+    letter-spacing:1px; text-transform:uppercase; font-size:13px; cursor:pointer;
   }
-  .submit-btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .submit-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .submit-btn:hover:not(:disabled){background:#5c9270;}
+  .hint{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--paper-dim); margin-top:8px;}
+
+  .ledger{background:var(--card); border:1px solid var(--line); border-radius:3px; padding:16px; max-height:460px; overflow-y:auto;}
+  .ledger-empty{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--paper-dim); padding:20px 0; text-align:center;}
+  .ledger-row{
+    display:flex; align-items:flex-start; gap:12px; padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .rank{
+    font-family:'Archivo Black',sans-serif; font-size:20px; color:var(--line);
+    width:30px; flex-shrink:0; text-align:right;
+  }
+  .ledger-row.tier-1 .rank{color:var(--hazard);}
+  .ledger-row.tier-2 .rank{color:var(--amber);}
+  .ledger-row.tier-resolved .rank{color:var(--resolved);}
+  .ledger-body{flex:1; min-width:0;}
+  .ledger-top{display:flex; justify-content:space-between; gap:8px; align-items:center;}
+  .ledger-title{font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;}
+  .ledger-score{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap; display:flex; align-items:center; gap:6px;}
+  .bar-track{height:5px; background:var(--ink); border-radius:3px; margin-top:7px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:3px;}
+  .tier-1 .bar-fill{background:var(--hazard);}
+  .tier-2 .bar-fill{background:var(--amber);}
+  .tier-3 .bar-fill{background:var(--wet);}
+  .tier-resolved .bar-fill{background:var(--resolved);}
+
+  .badge-resolved{
+    background:var(--resolved); color:var(--paper); font-family:'IBM Plex Mono',monospace;
+    font-size:10px; padding:2px 6px; border-radius:2px; font-weight:600; text-transform:uppercase;
+  }
+
+  /* Proof Button Style */
+  .proof-btn{
+    background:var(--wet); color:#0e130f; border:none; border-radius:2px;
+    padding:3px 8px; font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:11px; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .proof-btn:hover{background:#5c9270;}
+
+  /* Proof Modal Overlay */
+  #proofModal{
+    display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:rgba(10,13,11,0.92); z-index:99999; justify-content:center; align-items:center;
+    padding:20px;
+  }
+  .proof-modal-content{
+    background:var(--card); border:1px solid var(--line); padding:22px;
+    max-width:750px; width:100%; position:relative; border-radius:4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+  .proof-modal-close{
+    position:absolute; top:12px; right:14px; background:none; border:none;
+    color:var(--paper-dim); font-size:20px; cursor:pointer; font-weight:bold;
+  }
+  .proof-modal-close:hover{color:var(--paper);}
+  .proof-modal-title{
+    font-family:'Oswald',sans-serif; font-size:18px; margin:0 0 16px;
+    text-transform:uppercase; color:var(--paper); letter-spacing:1px; text-align:center;
+  }
+  
+  /* Comparison Grid for Before & After Photos */
+  .proof-grid{
+    display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:8px;
+  }
+  .proof-box{
+    flex:1; min-width:240px; text-align:center; background:var(--ink);
+    padding:10px; border:1px solid var(--line); border-radius:3px;
+  }
+  .proof-label{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
+    margin-bottom:8px; letter-spacing:1px; text-transform:uppercase;
+  }
+  .proof-label.before{ color:var(--amber); }
+  .proof-label.after{ color:var(--wet); }
+  .proof-modal-img{
+    width:100%; max-height:48vh; border-radius:2px; border:1px solid var(--line);
+    object-fit:contain; background:#000;
+  }
+
+  .algo-note{
+    margin-top:26px; padding:14px 16px; border:1px dashed var(--line); border-radius:3px;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); line-height:1.7;
+  }
+  .algo-note b{color:var(--paper);}
+
+  ::-webkit-scrollbar{width:7px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+
+  .leaflet-popup-content-wrapper{background:var(--card); color:var(--paper); border-radius:3px;}
+  .leaflet-popup-tip{background:var(--card);}
+  .leaflet-popup-content{font-family:'Inter',sans-serif; font-size:12px;}
+
+  .leaflet-control-layers{
+    background: var(--card) !important;
+    color: var(--paper) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 3px !important;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+  .leaflet-control-layers-toggle{
+    background-color: var(--card) !important;
+  }
 </style>
 </head>
 <body>
-
 <div class="wrap">
+
   <div class="masthead">
-    <h1>TrashTagger</h1>
-    <div class="meta">CITIZEN REPORTING PORTAL • BBMP SANITATION</div>
+    <h1>Trash<span class="brand">Tagger</span> <span class="author-credit">by Amit Patil</span></h1>
+    <div class="meta">CIVIC SANITATION TRACKER<br>COMMUNITY WASTE MAPPING</div>
+  </div>
+
+  <!-- Brief Overview Banner -->
+  <div class="intro-card">
+    <div class="intro-text">
+      <b>TrashTagger</b> is a community tool to map, report, and rank illegal waste dump spots in real-time. Tap the satellite map to log a spot—repeat reports automatically raise priority alert scores for civic action.
+      <div class="intro-sub">Help us build a cleaner neighborhood. Share this link with your local WhatsApp groups!</div>
+    </div>
+    <button class="share-btn" id="shareBtn">Share on WhatsApp</button>
+  </div>
+
+  <div class="setup-banner" id="setupBanner">
+    ⚠ <b>Cloud sync not active.</b> Running in local browser mode. Replace the <code>firebaseConfig</code> values in this file to connect live database sync across all users.
+  </div>
+
+  <div class="status-row">
+    <div class="pill"><span class="dot wet"></span> LOW &nbsp;·&nbsp; occasional litter</div>
+    <div class="pill"><span class="dot dry"></span> MED &nbsp;·&nbsp; recurring dump</div>
+    <div class="pill"><span class="dot hazard"></span> HIGH &nbsp;·&nbsp; open/burning waste</div>
+    <div class="pill"><span class="dot resolved"></span> CLEARED &nbsp;·&nbsp; resolved by authority</div>
+  </div>
+
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Search a place — e.g. MG Road, Bengaluru">
+    <button id="searchBtn">Search</button>
+    <div class="search-results" id="searchResults"></div>
   </div>
 
   <div id="map"></div>
+  <div class="map-note">
+    <span id="mapStatus">locating you…</span>
+    <button id="locateBtn">recenter on me</button>
+  </div>
 
-  <div class="form-card">
-    <div class="panel-title">Submit Black Spot Report</div>
-    <form id="reportForm">
-      
-      <div class="field-group">
-        <label>1. Location Coordinates</label>
-        <div class="coords-text" id="coordsText">Click anywhere on the map to pin location...</div>
+  <div class="grid">
+    <div>
+      <p class="panel-label">Log a report</p>
+      <form id="reportForm">
+        <label>Selected point</label>
+        <div class="coord-line" id="coordDisplay">tap anywhere on the map above</div>
+
+        <label>Severity</label>
+        <div class="sev-row">
+          <div class="sev-btn" data-sev="1">Low</div>
+          <div class="sev-btn" data-sev="2">Medium</div>
+          <div class="sev-btn" data-sev="3">High</div>
+        </div>
+
+        <label>Note (optional)</label>
+        <textarea id="noteInput" placeholder="e.g. behind the bus stop, plastic + food waste"></textarea>
+
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>Log report</button>
+        <div class="hint" id="hintText">Reports save permanently to the cloud — visible to anyone using this app's link.</div>
+      </form>
+    </div>
+
+    <div>
+      <p class="panel-label">Top 50 Ranked Black Spots</p>
+      <div class="ledger" id="ledger">
+        <div class="ledger-empty">No reports yet. Log the first one to start the ledger.</div>
       </div>
+    </div>
+  </div>
 
-      <div class="field-group">
-        <label>2. Severity Level</label>
-        <select id="severityInput" required>
-          <option value="" disabled selected>-- Select Severity --</option>
-          <option value="LOW">LOW</option>
-          <option value="MEDIUM">MEDIUM</option>
-          <option value="HIGH">HIGH</option>
-        </select>
+  <div class="algo-note">
+    <b>How ranking works —</b> Reports within 40m are merged into clusters. Each cluster receives a <b>Black Spot Score</b> = (report count × 10) + (average severity × 8) + recency bonus (fades over 30 days). Resolved spots are cleared directly by BBMP sanitation authorities.
+  </div>
+
+</div>
+
+<!-- Proof Modal (Before & After Side-by-Side) -->
+<div id="proofModal">
+  <div class="proof-modal-content">
+    <button class="proof-modal-close" id="closeProofModal">✕</button>
+    <div class="proof-modal-title">Authority Resolution Proof</div>
+    <div class="proof-grid">
+      <div class="proof-box" id="beforeBox">
+        <div class="proof-label before">Before Cleanup</div>
+        <img id="proofBeforeImg" class="proof-modal-img" src="" alt="Before Cleanup Photo">
       </div>
-
-      <div class="field-group">
-        <label>3. Additional Notes (Optional)</label>
-        <textarea id="noteInput" placeholder="Add details..."></textarea>
+      <div class="proof-box" id="afterBox">
+        <div class="proof-label after">After Cleanup</div>
+        <img id="proofAfterImg" class="proof-modal-img" src="" alt="After Cleanup Photo">
       </div>
-
-      <button type="submit" class="submit-btn" id="submitBtn" disabled>Log Report</button>
-    </form>
+    </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
+/* YOUR LIVE FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyCQiMeEqEny83vT8tFDTyHIIhw-6GSWxa0",
   authDomain: "blackspot-ledger.firebaseapp.com",
   projectId: "blackspot-ledger",
   storageBucket: "blackspot-ledger.firebasestorage.app",
   messagingSenderId: "858874785569",
-  appId: "1:858874785569:web:3b73d8981bc22bc0c1d860"
+  appId: "1:858874785569:web:3b73d8981bc22bc0c1d860",
+  measurementId: "G-MQ0WBXET6E"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const isConfigured = !Object.values(firebaseConfig).some(v => typeof v === 'string' && v.startsWith('YOUR_'));
 
-const map = L.map('map').setView([12.9716, 77.5946], 13);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; Esri',
-  maxZoom: 18
-}).addTo(map);
+let db = null, collection, addDoc, onSnapshot;
+let reports = JSON.parse(localStorage.getItem('bs_reports_cache') || '[]');
 
-let currentMarker = null;
-let selectedLat = null;
-let selectedLng = null;
+// Proof Modal Handlers
+const proofModal = document.getElementById('proofModal');
+const proofBeforeImg = document.getElementById('proofBeforeImg');
+const proofAfterImg = document.getElementById('proofAfterImg');
+const beforeBox = document.getElementById('beforeBox');
+const afterBox = document.getElementById('afterBox');
 
-const submitBtn = document.getElementById('submitBtn');
-const coordsText = document.getElementById('coordsText');
-
-map.on('click', (e) => {
-  selectedLat = e.latlng.lat;
-  selectedLng = e.latlng.lng;
-  if (currentMarker) map.removeLayer(currentMarker);
-  currentMarker = L.marker([selectedLat, selectedLng]).addTo(map);
-  coordsText.textContent = `📍 ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
-  submitBtn.disabled = false;
+document.getElementById('closeProofModal').addEventListener('click', () => {
+  proofModal.style.display = 'none';
+});
+proofModal.addEventListener('click', (e) => {
+  if (e.target === proofModal) proofModal.style.display = 'none';
 });
 
-document.getElementById('reportForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!selectedLat || !selectedLng) return;
+// Updated Proof Viewer to render both Before & After images
+window.viewProof = function(beforeImg, afterImg) {
+  let hasImage = false;
 
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Logging...";
+  if (beforeImg && beforeImg !== 'null' && beforeImg !== 'undefined' && beforeImg !== '') {
+    proofBeforeImg.src = beforeImg;
+    beforeBox.style.display = 'block';
+    hasImage = true;
+  } else {
+    beforeBox.style.display = 'none';
+  }
 
+  if (afterImg && afterImg !== 'null' && afterImg !== 'undefined' && afterImg !== '') {
+    proofAfterImg.src = afterImg;
+    afterBox.style.display = 'block';
+    hasImage = true;
+  } else {
+    afterBox.style.display = 'none';
+  }
+
+  if (hasImage) {
+    proofModal.style.display = 'flex';
+  } else {
+    alert("No cleanup proof images were attached for this resolved issue.");
+  }
+};
+
+async function initFirebase(){
+  if(!isConfigured){
+    document.getElementById('setupBanner').style.display = 'block';
+    render();
+    return;
+  }
   try {
-    await addDoc(collection(db, "reports"), {
-      lat: selectedLat,
-      lng: selectedLng,
-      sev: document.getElementById('severityInput').value,
-      note: document.getElementById('noteInput').value.trim(),
-      status: 'active',
-      ts: Date.now()
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
+    const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+    collection = fs.collection; addDoc = fs.addDoc; onSnapshot = fs.onSnapshot;
+    const app = initializeApp(firebaseConfig);
+    db = fs.getFirestore(app);
+    const reportsCol = collection(db, "reports");
+    onSnapshot(reportsCol, (snapshot) => {
+      reports = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
+      localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
+      render();
     });
+  } catch(e) {
+    console.warn("Firebase fallback to local cache", e);
+    render();
+  }
+}
 
-    alert("Report logged successfully!");
-    document.getElementById('reportForm').reset();
-    if (currentMarker) map.removeLayer(currentMarker);
-    coordsText.textContent = "Click anywhere on the map to pin location...";
-    submitBtn.textContent = "Log Report";
-  } catch (err) {
-    console.error("Error logging report:", err);
-    alert("Failed to submit report.");
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Log Report";
+async function persistReport(r){
+  r.status = 'active';
+  reports.push(r);
+  localStorage.setItem('bs_reports_cache', JSON.stringify(reports));
+  render();
+  if(isConfigured && db){
+    const reportsCol = collection(db, "reports");
+    await addDoc(reportsCol, r);
+  }
+}
+
+// Map setup & Tile Layers
+const DEFAULT_CENTER = [12.9716, 77.5946];
+
+const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  maxZoom: 19
+});
+
+const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+  maxZoom: 18
+});
+
+const map = L.map('map', { 
+  zoomControl: true,
+  layers: [satelliteLayer] 
+}).setView(DEFAULT_CENTER, 14);
+
+const baseMaps = {
+  "Satellite": satelliteLayer,
+  "Dark Mode": darkLayer
+};
+L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+let userMarker = null;
+const mapStatus = document.getElementById('mapStatus');
+
+function locate(){
+  mapStatus.textContent = 'locating you…';
+  if(!navigator.geolocation){
+    mapStatus.textContent = 'geolocation unavailable';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const ll = [pos.coords.latitude, pos.coords.longitude];
+    map.setView(ll, 15);
+    if(userMarker) map.removeLayer(userMarker);
+    userMarker = L.circleMarker(ll, {radius:7, color:'#4a7a93', fillColor:'#4a7a93', fillOpacity:0.9, weight:2}).addTo(map);
+    mapStatus.textContent = 'centered on your location';
+  }, ()=>{
+    mapStatus.textContent = 'location access denied';
+  }, {timeout:8000});
+}
+document.getElementById('locateBtn').addEventListener('click', locate);
+locate();
+
+// WhatsApp Sharing
+document.getElementById('shareBtn').addEventListener('click', () => {
+  const text = encodeURIComponent("Log and track civic waste dump spots on TrashTagger by Amit Patil:");
+  const url = encodeURIComponent(window.location.href);
+  if (navigator.share) {
+    navigator.share({ title: 'TrashTagger by Amit Patil', text: 'Community Waste Tracker', url: window.location.href });
+  } else {
+    window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, '_blank');
   }
 });
+
+// Location Search
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchResults = document.getElementById('searchResults');
+
+async function runSearch(){
+  const q = searchInput.value.trim();
+  if(!q) return;
+  searchResults.innerHTML = '<div>searching…</div>';
+  searchResults.style.display = 'block';
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const results = await res.json();
+    if(!results.length){
+      searchResults.innerHTML = '<div>no matches found</div>';
+      return;
+    }
+    searchResults.innerHTML = '';
+    results.forEach(r=>{
+      const row = document.createElement('div');
+      row.textContent = r.display_name;
+      row.addEventListener('click', ()=>{
+        map.setView([parseFloat(r.lat), parseFloat(r.lon)], 17);
+        searchResults.style.display = 'none';
+        searchInput.value = r.display_name;
+      });
+      searchResults.appendChild(row);
+    });
+  }catch(e){
+    searchResults.innerHTML = '<div>search failed — check connection</div>';
+  }
+}
+searchBtn.addEventListener('click', runSearch);
+searchInput.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); runSearch(); } });
+document.addEventListener('click', e=>{
+  if(!searchResults.contains(e.target) && e.target !== searchInput) searchResults.style.display = 'none';
+});
+
+// Report Form Logic
+let tempMarker = null;
+let pendingLatLng = null;
+let selectedSev = null;
+const coordDisplay = document.getElementById('coordDisplay');
+const submitBtn = document.getElementById('submitBtn');
+
+function updateSubmitState(){
+  submitBtn.disabled = !(pendingLatLng && selectedSev);
+}
+
+map.on('click', function(e){
+  pendingLatLng = e.latlng;
+  coordDisplay.textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+  if(tempMarker) map.removeLayer(tempMarker);
+  tempMarker = L.circleMarker(e.latlng, {radius:8, color:'#c99a3e', fillColor:'#c99a3e', fillOpacity:0.5, weight:2, dashArray:'3,3'}).addTo(map);
+  updateSubmitState();
+});
+
+document.querySelectorAll('.sev-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSev = parseInt(btn.dataset.sev, 10);
+    updateSubmitState();
+  });
+});
+
+// Clustering and Scoring Algorithm
+const CLUSTER_RADIUS_M = 40;
+
+function haversine(a, b){
+  const R = 6371000;
+  const dLat = (b.lat-a.lat) * Math.PI/180;
+  const dLng = (b.lng-a.lng) * Math.PI/180;
+  const lat1 = a.lat * Math.PI/180, lat2 = b.lat * Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function clusterReports(points){
+  const clusters = [];
+  for(const p of points){
+    let placed = false;
+    for(const c of clusters){
+      if(haversine(c.centroid, p) <= CLUSTER_RADIUS_M){
+        c.points.push(p);
+        c.centroid = {
+          lat: c.points.reduce((s,q)=>s+q.lat,0)/c.points.length,
+          lng: c.points.reduce((s,q)=>s+q.lng,0)/c.points.length
+        };
+        placed = true;
+        break;
+      }
+    }
+    if(!placed){
+      clusters.push({ centroid: {lat:p.lat, lng:p.lng}, points:[p] });
+    }
+  }
+  return clusters;
+}
+
+function scoreCluster(c){
+  const activePoints = c.points.filter(p => p.status !== 'resolved');
+  const isResolved = activePoints.length === 0;
+
+  if(isResolved){
+    return { score: 0, count: c.points.length, activeCount: 0, avgSev: 0, daysAgo: 0, isResolved: true };
+  }
+
+  const count = activePoints.length;
+  const avgSev = activePoints.reduce((s,p)=>s+p.sev,0) / count;
+  const now = Date.now();
+  const mostRecent = Math.max(...activePoints.map(p=>p.ts));
+  const daysAgo = (now - mostRecent) / (1000*60*60*24);
+  const recencyBonus = Math.max(0, 20 * (1 - daysAgo/30));
+  const score = (count * 10) + (avgSev * 8) + recencyBonus;
+  return { score, count: c.points.length, activeCount: count, avgSev, daysAgo, isResolved: false };
+}
+
+function tierOf(score, isResolved){
+  if(isResolved) return 'resolved';
+  if(score >= 45) return 1;
+  if(score >= 22) return 2;
+  return 3;
+}
+
+const clusterLayer = L.layerGroup().addTo(map);
+
+function render(){
+  const clusters = clusterReports(reports).map(c=>{
+    const s = scoreCluster(c);
+    return {...c, ...s, tier: tierOf(s.score, s.isResolved)};
+  }).sort((a,b)=>b.score-a.score);
+
+  clusterLayer.clearLayers();
+  const tierColor = {1:'#c1512f', 2:'#c99a3e', 3:'#4e7d5c', 'resolved':'#5a6558'};
+  const activeClusters = clusters.filter(c => !c.isResolved);
+  const maxScore = activeClusters.length ? Math.max(...activeClusters.map(c=>c.score)) : 1;
+
+  // Render map markers
+  clusters.forEach((c)=>{
+    const radius = c.isResolved ? 8 : (8 + 12 * (c.score / maxScore));
+    
+    // Extract images for resolved spots
+    const beforeImg = c.points.find(p => p.beforeImage)?.beforeImage || '';
+    const afterImg = c.points.find(p => p.afterImage)?.afterImage || c.points.find(p => p.proofImage)?.proofImage || '';
+    
+    let popupContent = c.isResolved 
+      ? `<b style="color:#5a6558;">[CLEARED SPOT]</b><br>Cleaned by BBMP Authority`
+      : `<b>${c.activeCount} active / ${c.count} total report${c.count>1?'s':''}</b><br>avg severity ${c.avgSev.toFixed(1)} / 3<br>score ${c.score.toFixed(0)}`;
+
+    if (c.isResolved && (beforeImg || afterImg)) {
+      popupContent += `<br><button onclick="window.viewProof('${beforeImg}', '${afterImg}')" class="proof-btn" style="margin-top:8px;">📸 View Proof</button>`;
+    }
+
+    L.circleMarker(c.centroid, {
+      radius, color: tierColor[c.tier], fillColor: tierColor[c.tier],
+      fillOpacity:0.45, weight:2
+    }).bindPopup(popupContent).addTo(clusterLayer);
+  });
+
+  // Limit ledger to Top 50
+  const top50 = clusters.slice(0, 50);
+
+  const ledger = document.getElementById('ledger');
+  if(top50.length === 0){
+    ledger.innerHTML = '<div class="ledger-empty">No reports yet. Log the first one to start the ledger.</div>';
+    return;
+  }
+  ledger.innerHTML = top50.map((c,i)=>{
+    const pct = c.isResolved ? 0 : Math.min(100, (c.score/maxScore)*100);
+    const recentNote = c.daysAgo < 1 ? 'today' : `${Math.floor(c.daysAgo)}d ago`;
+
+    // Extract images for resolved spots
+    const beforeImg = c.points.find(p => p.beforeImage)?.beforeImage || '';
+    const afterImg = c.points.find(p => p.afterImage)?.afterImage || c.points.find(p => p.proofImage)?.proofImage || '';
+
+    const scoreLabel = c.isResolved 
+      ? `<span class="badge-resolved">CLEARED</span> ${(beforeImg || afterImg) ? `<button onclick="window.viewProof('${beforeImg}', '${afterImg}')" class="proof-btn">Proof</button>` : ''}` 
+      : `score ${c.score.toFixed(0)}`;
+
+    return `
+      <div class="ledger-row tier-${c.tier}">
+        <div class="rank">${i+1}</div>
+        <div class="ledger-body">
+          <div class="ledger-top">
+            <div class="ledger-title">${c.centroid.lat.toFixed(4)}, ${c.centroid.lng.toFixed(4)}</div>
+            <div class="ledger-score">${scoreLabel}</div>
+          </div>
+          <div class="ledger-meta">${c.count} report${c.count>1?'s':''} · ${c.isResolved ? 'cleared by authority' : `avg sev ${c.avgSev.toFixed(1)} · last seen ${recentNote}`}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Form Submit Handler
+document.getElementById('reportForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  if(!pendingLatLng || !selectedSev) return;
+  const report = {
+    lat: pendingLatLng.lat,
+    lng: pendingLatLng.lng,
+    sev: selectedSev,
+    note: document.getElementById('noteInput').value.trim(),
+    ts: Date.now(),
+    status: 'active'
+  };
+  await persistReport(report);
+
+  if(tempMarker){ map.removeLayer(tempMarker); tempMarker = null; }
+  pendingLatLng = null; selectedSev = null;
+  document.querySelectorAll('.sev-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('noteInput').value = '';
+  coordDisplay.textContent = 'tap anywhere on the map above';
+  updateSubmitState();
+});
+
+await initFirebase();
 </script>
 </body>
 </html>
