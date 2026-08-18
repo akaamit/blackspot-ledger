@@ -118,7 +118,7 @@
   }
   .modal-box{
     background:var(--card); border:1px solid var(--line); border-radius:4px;
-    padding:22px; max-width:500px; width:100%; position:relative;
+    padding:22px; max-width:500px; width:100%; position:relative; max-height:90vh; overflow-y:auto;
   }
   .modal-close{
     position:absolute; top:12px; right:14px; background:none; border:none;
@@ -135,9 +135,15 @@
     display:block; font-family:'IBM Plex Mono',monospace; font-size:11px;
     text-transform:uppercase; color:var(--amber); margin-bottom:6px; letter-spacing:0.5px;
   }
-  .file-group input[type="file"]{
+  .file-group input[type="file"], .file-group textarea{
     width:100%; background:var(--ink); border:1px solid var(--line); color:var(--paper);
     padding:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; border-radius:2px;
+  }
+  .file-group textarea{
+    font-family:'Inter',sans-serif; font-size:12px; resize:vertical; min-height:65px;
+  }
+  .file-group textarea:focus{
+    outline:1px solid var(--wet);
   }
   .preview-thumb{
     max-width:100%; height:120px; object-fit:cover; border:1px solid var(--line);
@@ -184,7 +190,7 @@
 
 </div>
 
-<!-- Resolve Action Modal (Before & After Image Uploads) -->
+<!-- Resolve Action Modal (Before & After Image Uploads + Action Comments) -->
 <div class="modal-overlay" id="resolveModal">
   <div class="modal-box">
     <button class="modal-close" id="closeModal">✕</button>
@@ -203,6 +209,12 @@
         <label>2. After Cleanup Photo (Cleared Spot)</label>
         <input type="file" id="afterImgInput" accept="image/*" required>
         <img id="afterPreview" class="preview-thumb" alt="After Preview">
+      </div>
+
+      <!-- Field 3: Resolution Comments -->
+      <div class="file-group">
+        <label>3. Action Comments / Resolution Notes (Optional)</label>
+        <textarea id="resolveCommentInput" placeholder="e.g., Cleared 40kg dry waste, assigned sanitation vehicle auto #04..."></textarea>
       </div>
 
       <button type="submit" class="submit-resolve-btn" id="saveResolveBtn">Confirm Cleanup & Mark Resolved</button>
@@ -257,6 +269,7 @@ const beforeImgInput = document.getElementById('beforeImgInput');
 const afterImgInput = document.getElementById('afterImgInput');
 const beforePreview = document.getElementById('beforePreview');
 const afterPreview = document.getElementById('afterPreview');
+const resolveCommentInput = document.getElementById('resolveCommentInput');
 
 document.getElementById('closeModal').addEventListener('click', () => {
   resolveModal.style.display = 'none';
@@ -310,6 +323,7 @@ window.openResolveModal = function(docId) {
   afterBase64 = null;
   beforeImgInput.value = '';
   afterImgInput.value = '';
+  resolveCommentInput.value = '';
   beforePreview.style.display = 'none';
   afterPreview.style.display = 'none';
   resolveModal.style.display = 'flex';
@@ -333,6 +347,7 @@ document.getElementById('resolveForm').addEventListener('submit', async (e) => {
       beforeImage: beforeBase64,
       afterImage: afterBase64,
       proofImage: afterBase64,
+      resolutionComment: resolveCommentInput.value.trim(),
       resolvedAt: Date.now()
     });
 
